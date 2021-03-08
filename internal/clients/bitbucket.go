@@ -14,8 +14,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package v1alpha1 contains the v1alpha1 group AccessKey resources of the Bitbucket Service provider.
-// +kubebuilder:object:generate=true
-// +groupName=accesskey.bitbucket-server.crossplane.io
-// +versionName=v1alpha1
-package v1alpha1
+package clients
+
+import (
+	"github.com/crossplane/provider-bitbucket-server/internal/clients/bitbucket"
+)
+
+// Config provides gitlab configurations for the bitbucket client
+type Config struct {
+	Token   string
+	BaseURL string
+}
+
+// NewClient creates new Bitbucket Client with provided base URL and credentials
+func NewClient(c Config) bitbucket.KeyClientAPI {
+	return nil
+}
