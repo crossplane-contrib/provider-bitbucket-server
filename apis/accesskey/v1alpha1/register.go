@@ -25,7 +25,7 @@ import (
 
 // Package type metadata.
 const (
-	Group   = "sample.template.crossplane.io"
+	Group   = "accesskey.bitbucket-server.crossplane.io"
 	Version = "v1alpha1"
 )
 
@@ -37,14 +37,14 @@ var (
 	SchemeBuilder = &scheme.Builder{GroupVersion: SchemeGroupVersion}
 )
 
-// MyType type metadata.
+// AccessKey type metadata.
 var (
-	MyTypeKind             = reflect.TypeOf(MyType{}).Name()
-	MyTypeGroupKind        = schema.GroupKind{Group: Group, Kind: MyTypeKind}.String()
-	MyTypeKindAPIVersion   = MyTypeKind + "." + SchemeGroupVersion.String()
-	MyTypeGroupVersionKind = SchemeGroupVersion.WithKind(MyTypeKind)
+	AccessKeyKind             = reflect.TypeOf(AccessKey{}).Name()
+	AccessKeyGroupKind        = schema.GroupKind{Group: Group, Kind: AccessKeyKind}.String()
+	AccessKeyKindAPIVersion   = AccessKeyKind + "." + SchemeGroupVersion.String()
+	AccessKeyGroupVersionKind = SchemeGroupVersion.WithKind(AccessKeyKind)
 )
 
 func init() {
-	SchemeBuilder.Register(&MyType{}, &MyTypeList{})
+	SchemeBuilder.Register(&AccessKey{}, &AccessKeyList{})
 }

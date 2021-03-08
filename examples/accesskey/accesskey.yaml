@@ -1,5 +1,5 @@
-apiVersion: sample.template.crossplane.io/v1alpha1
-kind: MyType
+apiVersion: accesskey.bitbucket-server.crossplane.io/v1alpha1
+kind: AccessKey
 metadata:
   name: example
 spec:

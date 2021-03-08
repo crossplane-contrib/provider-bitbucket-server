@@ -22,50 +22,50 @@ import (
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 )
 
-// MyTypeParameters are the configurable fields of a MyType.
-type MyTypeParameters struct {
+// AccessKeyParameters are the configurable fields of a AccessKey.
+type AccessKeyParameters struct {
 	ConfigurableField string `json:"configurableField"`
 }
 
-// MyTypeObservation are the observable fields of a MyType.
-type MyTypeObservation struct {
+// AccessKeyObservation are the observable fields of a AccessKey.
+type AccessKeyObservation struct {
 	ObservableField string `json:"observableField,omitempty"`
 }
 
-// A MyTypeSpec defines the desired state of a MyType.
-type MyTypeSpec struct {
+// A AccessKeySpec defines the desired state of a AccessKey.
+type AccessKeySpec struct {
 	xpv1.ResourceSpec `json:",inline"`
-	ForProvider       MyTypeParameters `json:"forProvider"`
+	ForProvider       AccessKeyParameters `json:"forProvider"`
 }
 
-// A MyTypeStatus represents the observed state of a MyType.
-type MyTypeStatus struct {
+// A AccessKeyStatus represents the observed state of a AccessKey.
+type AccessKeyStatus struct {
 	xpv1.ResourceStatus `json:",inline"`
-	AtProvider          MyTypeObservation `json:"atProvider,omitempty"`
+	AtProvider          AccessKeyObservation `json:"atProvider,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 
-// A MyType is an example API type
+// A AccessKey is an example API type
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="STATUS",type="string",JSONPath=".status.bindingPhase"
 // +kubebuilder:printcolumn:name="STATE",type="string",JSONPath=".status.atProvider.state"
 // +kubebuilder:printcolumn:name="CLASS",type="string",JSONPath=".spec.classRef.name"
 // +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:resource:scope=Cluster
-type MyType struct {
+type AccessKey struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   MyTypeSpec   `json:"spec"`
-	Status MyTypeStatus `json:"status,omitempty"`
+	Spec   AccessKeySpec   `json:"spec"`
+	Status AccessKeyStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 
-// MyTypeList contains a list of MyType
-type MyTypeList struct {
+// AccessKeyList contains a list of AccessKey
+type AccessKeyList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []MyType `json:"items"`
+	Items           []AccessKey `json:"items"`
 }

@@ -1,4 +1,4 @@
-module github.com/crossplane/provider-template
+module github.com/crossplane/provider-bitbucket-server
 
 go 1.13
 

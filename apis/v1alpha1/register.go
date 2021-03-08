@@ -25,7 +25,7 @@ import (
 
 // Package type metadata.
 const (
-	Group   = "template.crossplane.io"
+	Group   = "bitbucket-server.crossplane.io"
 	Version = "v1alpha1"
 )
 
