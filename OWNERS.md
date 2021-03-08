@@ -10,5 +10,6 @@ guidelines and responsibilities for the steering committee and maintainers.
 
 ## Maintainers
 
-* Nic Cope <negz@upbound.io> ([negz](https://github.com/negz))
-* Daniel Mangum <dan@upbound.io> ([hasheddan](https://github.com/hasheddan))
+* Carl Henrik Lunde ([chlunde](https://github.com/chlunde))
+* Lars Haugan ([larhauga](https://github.com/larhauga))
+* <Your name here> :-)

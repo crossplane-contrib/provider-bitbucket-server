@@ -1,15 +1,15 @@
 # provider-bitbucket-server
 
-`provider-bitbucket-server` is a minimal [Crossplane](https://crossplane.io/) Provider
-that is meant to be used as a template for implementing new Providers. It comes
-with the following features that are meant to be refactored:
+`provider-bitbucket-server` is a [Crossplane](https://crossplane.io/)
+Provider that is meant to integrate with the bitbucket server APIs.
 
-- A `ProviderConfig` type that only points to a credentials `Secret`.
-- A `MyType` resource type that serves as an example managed resource.
-- A managed resource controller that reconciles `MyType` objects and simply
-  prints their configuration in its `Observe` method.
+The scope is to provide enough resources to provision CI/CD pipelines.
 
 ## Developing
+
+
+https://docs.atlassian.com/bitbucket-server/rest/7.10.0/bitbucket-rest.html
+https://docs.atlassian.com/bitbucket-server/rest/7.10.0/bitbucket-ssh-rest.html
 
 Run against a Kubernetes cluster:
 
