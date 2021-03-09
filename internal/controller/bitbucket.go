@@ -22,15 +22,16 @@ import (
 
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 
+	"github.com/crossplane/provider-bitbucket-server/internal/controller/accesskey"
 	"github.com/crossplane/provider-bitbucket-server/internal/controller/config"
 )
 
-// Setup creates all Template controllers with the supplied logger and adds them to
-// the supplied manager.
+// Setup creates all Bitbucket Server controllers with the supplied
+// logger and adds them to the supplied manager.
 func Setup(mgr ctrl.Manager, l logging.Logger, wl workqueue.RateLimiter) error {
 	for _, setup := range []func(ctrl.Manager, logging.Logger, workqueue.RateLimiter) error{
 		config.Setup,
-		//		mytype.Setup,
+		accesskey.Setup,
 	} {
 		if err := setup(mgr, l, wl); err != nil {
 			return err

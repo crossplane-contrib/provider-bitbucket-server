@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Crossplane Authors.
+Copyright 2021 The Crossplane Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -20,25 +20,56 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
+	"github.com/crossplane/provider-bitbucket-server/internal/clients/bitbucket"
 )
 
 // AccessKeyParameters are the configurable fields of a AccessKey.
 type AccessKeyParameters struct {
-	ConfigurableField string `json:"configurableField"`
+	// The project key is the short name for the project for a
+	// repository. Typically the key for a project called "Foo Bar"
+	// would be "FB".
+	// +immutable
+	ProjectKey string `json:"projectKey"`
+
+	// The repoName is the name of the git repository.
+	// +immutable
+	RepoName string `json:"repoName"`
+
+	PublicKey PublicKey `json:"publicKey"`
 }
 
-// AccessKeyObservation are the observable fields of a AccessKey.
+// +immutable does not make the CRD immutable
+// https://discuss.kubernetes.io/t/immutable-crd/10068
+// https://github.com/kubernetes/kubernetes/issues/65973
+// https://crossplane.slack.com/archives/C01718T2476/p1615201920017800?thread_ts=1615199267.016100&cid=C01718T2476
+
+// PublicKey contains the information about the public key. Only the permission field is mutable.
+type PublicKey struct {
+	// Label
+	// +immutable
+	Label string `json:"label"`
+
+	// The ssh-key with access to the git repo.
+	// +immutable
+	// +kubebuilder:validation:Pattern=(ssh|ecdsa)-[a-z0-9-]+ .*
+	Key string `json:"key"`
+
+	// +kubebuilder:validation:Enum=REPO_READ;REPO_WRITE
+	Permission string `json:"permission"`
+}
+
+// AccessKeyObservation are the observable fields of an AccessKey.
 type AccessKeyObservation struct {
-	ObservableField string `json:"observableField,omitempty"`
+	ID int `json:"id,omitempty"`
 }
 
-// A AccessKeySpec defines the desired state of a AccessKey.
+// An AccessKeySpec defines the desired state of an AccessKey.
 type AccessKeySpec struct {
 	xpv1.ResourceSpec `json:",inline"`
 	ForProvider       AccessKeyParameters `json:"forProvider"`
 }
 
-// A AccessKeyStatus represents the observed state of a AccessKey.
+// An AccessKeyStatus represents the observed state of an AccessKey.
 type AccessKeyStatus struct {
 	xpv1.ResourceStatus `json:",inline"`
 	AtProvider          AccessKeyObservation `json:"atProvider,omitempty"`
@@ -46,10 +77,10 @@ type AccessKeyStatus struct {
 
 // +kubebuilder:object:root=true
 
-// A AccessKey is an example API type
+// An AccessKey is an SSH key with read or write access to a bitbucket git repo.
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="STATUS",type="string",JSONPath=".status.bindingPhase"
-// +kubebuilder:printcolumn:name="STATE",type="string",JSONPath=".status.atProvider.state"
+// +kubebuilder:printcolumn:name="ID",type="string",JSONPath=".status.atProvider.id"
 // +kubebuilder:printcolumn:name="CLASS",type="string",JSONPath=".spec.classRef.name"
 // +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:resource:scope=Cluster
@@ -59,6 +90,21 @@ type AccessKey struct {
 
 	Spec   AccessKeySpec   `json:"spec"`
 	Status AccessKeyStatus `json:"status,omitempty"`
+}
+
+func (a AccessKey) Repo() bitbucket.Repo {
+	return bitbucket.Repo{
+		ProjectKey: a.Spec.ForProvider.ProjectKey,
+		Repo:       a.Spec.ForProvider.RepoName,
+	}
+}
+
+func (a AccessKey) AccessKey() bitbucket.AccessKey {
+	return bitbucket.AccessKey{
+		Key:        a.Spec.ForProvider.PublicKey.Key,
+		Label:      a.Spec.ForProvider.PublicKey.Label,
+		Permission: a.Spec.ForProvider.PublicKey.Permission,
+	}
 }
 
 // +kubebuilder:object:root=true
