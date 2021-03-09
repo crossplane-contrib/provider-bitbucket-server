@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package accesskey
+package webhook
 
 import (
 	"context"
@@ -36,14 +36,14 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
-	"github.com/crossplane/provider-bitbucket-server/apis/accesskey/v1alpha1"
 	apisv1alpha1 "github.com/crossplane/provider-bitbucket-server/apis/v1alpha1"
+	"github.com/crossplane/provider-bitbucket-server/apis/webhook/v1alpha1"
 	"github.com/crossplane/provider-bitbucket-server/internal/clients"
 	"github.com/crossplane/provider-bitbucket-server/internal/clients/bitbucket"
 )
 
 const (
-	errNotAccessKey = "managed resource is not a AccessKey custom resource"
+	errNotWebhook   = "managed resource is not a Webhook custom resource"
 	errTrackPCUsage = "cannot track ProviderConfig usage"
 	errGetPC        = "cannot get ProviderConfig"
 	errGetCreds     = "cannot get credentials"
@@ -56,27 +56,27 @@ const (
 	errUpdateFailed = "cannot update access permission key with bitbucket API"
 )
 
-// Setup adds a controller that reconciles AccessKey managed resources.
+// Setup adds a controller that reconciles Webhook managed resources.
 func Setup(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
-	name := managed.ControllerName(v1alpha1.AccessKeyGroupKind)
+	name := managed.ControllerName(v1alpha1.WebhookGroupKind)
 
 	o := controller.Options{
 		RateLimiter: ratelimiter.NewDefaultManagedRateLimiter(rl),
 	}
 
 	r := managed.NewReconciler(mgr,
-		resource.ManagedKind(v1alpha1.AccessKeyGroupVersionKind),
+		resource.ManagedKind(v1alpha1.WebhookGroupVersionKind),
 		managed.WithExternalConnecter(&connector{
 			kube:         mgr.GetClient(),
 			usage:        resource.NewProviderConfigUsageTracker(mgr.GetClient(), &apisv1alpha1.ProviderConfigUsage{}),
-			newServiceFn: clients.NewAccessKeyClient}),
+			newServiceFn: clients.NewWebhookClient}),
 		managed.WithLogger(l.WithValues("controller", name)),
 		managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name))))
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
 		WithOptions(o).
-		For(&v1alpha1.AccessKey{}).
+		For(&v1alpha1.Webhook{}).
 		Complete(r)
 }
 
@@ -85,7 +85,7 @@ func Setup(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
 type connector struct {
 	kube         client.Client
 	usage        resource.Tracker
-	newServiceFn func(clients.Config) bitbucket.KeyClientAPI
+	newServiceFn func(clients.Config) bitbucket.WebhookClientAPI
 }
 
 // Connect typically produces an ExternalClient by:
@@ -94,9 +94,9 @@ type connector struct {
 // 3. Getting the credentials specified by the ProviderConfig.
 // 4. Using the credentials to form a client.
 func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
-	cr, ok := mg.(*v1alpha1.AccessKey)
+	cr, ok := mg.(*v1alpha1.Webhook)
 	if !ok {
-		return nil, errors.New(errNotAccessKey)
+		return nil, errors.New(errNotWebhook)
 	}
 
 	if err := c.usage.Track(ctx, mg); err != nil {
@@ -127,13 +127,13 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 type external struct {
 	// A 'client' used to connect to the external resource API. In practice this
 	// would be something like an AWS SDK client.
-	service bitbucket.KeyClientAPI
+	service bitbucket.WebhookClientAPI
 }
 
 func (c *external) Observe(ctx context.Context, mg resource.Managed) (managed.ExternalObservation, error) {
-	cr, ok := mg.(*v1alpha1.AccessKey)
+	cr, ok := mg.(*v1alpha1.Webhook)
 	if !ok {
-		return managed.ExternalObservation{}, errors.New(errNotAccessKey)
+		return managed.ExternalObservation{}, errors.New(errNotWebhook)
 	}
 
 	if meta.GetExternalName(cr) == "" {
@@ -146,7 +146,8 @@ func (c *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 		return managed.ExternalObservation{}, nil // not exists
 	}
 
-	key, err := c.service.GetAccessKey(ctx, cr.Repo(), id)
+	hook, err := c.service.GetWebhook(ctx, cr.Repo(), id)
+	_ = hook // TODO
 	if err != nil {
 		if errors.Is(err, bitbucket.ErrNotFound) {
 			return managed.ExternalObservation{}, nil
@@ -165,7 +166,7 @@ func (c *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 		// Return false when the external resource exists, but it not up to date
 		// with the desired managed resource state. This lets the managed
 		// resource reconciler know that it needs to call Update.
-		ResourceUpToDate: key.Permission == cr.Spec.ForProvider.PublicKey.Permission,
+		ResourceUpToDate: false, // TODO
 
 		// Return any details that may be required to connect to the external
 		// resource. These will be stored as the connection secret.
@@ -173,8 +174,8 @@ func (c *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 	}, nil
 }
 
-func (c *external) create(ctx context.Context, cr *v1alpha1.AccessKey) error {
-	key, err := c.service.CreateAccessKey(ctx, cr.Repo(), cr.AccessKey())
+func (c *external) create(ctx context.Context, cr *v1alpha1.Webhook) error {
+	key, err := c.service.CreateWebhook(ctx, cr.Repo(), cr.Webhook())
 	if err != nil {
 		return err
 	}
@@ -186,9 +187,9 @@ func (c *external) create(ctx context.Context, cr *v1alpha1.AccessKey) error {
 }
 
 func (c *external) Create(ctx context.Context, mg resource.Managed) (managed.ExternalCreation, error) {
-	cr, ok := mg.(*v1alpha1.AccessKey)
+	cr, ok := mg.(*v1alpha1.Webhook)
 	if !ok {
-		return managed.ExternalCreation{}, errors.New(errNotAccessKey)
+		return managed.ExternalCreation{}, errors.New(errNotWebhook)
 	}
 
 	cr.Status.SetConditions(xpv1.Creating())
@@ -208,15 +209,18 @@ func (c *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 }
 
 func (c *external) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
-	cr, ok := mg.(*v1alpha1.AccessKey)
+	cr, ok := mg.(*v1alpha1.Webhook)
 	if !ok {
-		return managed.ExternalUpdate{}, errors.New(errNotAccessKey)
+		return managed.ExternalUpdate{}, errors.New(errNotWebhook)
 	}
 
 	id, _ := strconv.Atoi(meta.GetExternalName(cr))
-	if err := c.service.UpdateAccessKeyPermission(ctx, cr.Repo(), id, cr.Spec.ForProvider.PublicKey.Permission); err != nil {
-		return managed.ExternalUpdate{}, errors.Wrap(err, errUpdateFailed)
-	}
+	_ = id // TODO
+	/*
+		if err := c.service.UpdateWebhookPermission(ctx, cr.Repo(), id, cr.Spec.ForProvider.PublicKey.Permission); err != nil {
+			return managed.ExternalUpdate{}, errors.Wrap(err, errUpdateFailed)
+		}
+	*/
 
 	return managed.ExternalUpdate{
 		// Optionally return any details that may be required to connect to the
@@ -226,13 +230,13 @@ func (c *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 }
 
 func (c *external) Delete(ctx context.Context, mg resource.Managed) error {
-	cr, ok := mg.(*v1alpha1.AccessKey)
+	cr, ok := mg.(*v1alpha1.Webhook)
 	if !ok {
-		return errors.New(errNotAccessKey)
+		return errors.New(errNotWebhook)
 	}
 
 	id, _ := strconv.Atoi(meta.GetExternalName(cr)) // TODO err
-	if err := c.service.DeleteAccessKey(ctx, cr.Repo(), id); err != nil {
+	if err := c.service.DeleteWebhook(ctx, cr.Repo(), id); err != nil {
 		return errors.Wrap(err, errDeleteFailed)
 	}
 

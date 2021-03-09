@@ -30,10 +30,18 @@ type Config struct {
 }
 
 // NewClient creates new Bitbucket Client with provided base URL and credentials
-func NewClient(c Config) bitbucket.KeyClientAPI {
+func NewClient(c Config) *rest.Client {
 	return &rest.Client{
 		Token:      c.Token,
 		BaseURL:    c.BaseURL,
 		HTTPClient: http.DefaultClient,
 	}
+}
+
+func NewWebhookClient(c Config) bitbucket.WebhookClientAPI {
+	return NewClient(c)
+}
+
+func NewAccessKeyClient(c Config) bitbucket.KeyClientAPI {
+	return NewClient(c)
 }

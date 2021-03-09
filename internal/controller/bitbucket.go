@@ -24,6 +24,7 @@ import (
 
 	"github.com/crossplane/provider-bitbucket-server/internal/controller/accesskey"
 	"github.com/crossplane/provider-bitbucket-server/internal/controller/config"
+	"github.com/crossplane/provider-bitbucket-server/internal/controller/webhook"
 )
 
 // Setup creates all Bitbucket Server controllers with the supplied
@@ -32,6 +33,7 @@ func Setup(mgr ctrl.Manager, l logging.Logger, wl workqueue.RateLimiter) error {
 	for _, setup := range []func(ctrl.Manager, logging.Logger, workqueue.RateLimiter) error{
 		config.Setup,
 		accesskey.Setup,
+		webhook.Setup,
 	} {
 		if err := setup(mgr, l, wl); err != nil {
 			return err
