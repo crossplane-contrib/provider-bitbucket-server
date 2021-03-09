@@ -4,15 +4,18 @@ metadata:
   namespace: crossplane-system
   name: example-provider-secret
 type: Opaque
-data:
-  # credentials: BASE64ENCODED_PROVIDER_CREDS
+stringData:
+  credentials: "foo"
 ---
 apiVersion: bitbucket-server.crossplane.io/v1alpha1
 kind: ProviderConfig
 metadata:
   name: example
 spec:
-  credentialsSecretRef:
-    namespace: crossplane-system
-    name: example-provider-secret
-    key: credentials
+  baseURL: https://bitbucket.company.example.com
+  credentials:
+    source: Secret
+    secretRef:
+      namespace: crossplane-system
+      name: example-provider-secret
+      key: credentials
