@@ -70,6 +70,5 @@ type WebhookClientAPI interface {
 	CreateWebhook(ctx context.Context, repo Repo, webhook Webhook) (result Webhook, err error)
 	DeleteWebhook(ctx context.Context, repo Repo, id int) (err error)
 	GetWebhook(ctx context.Context, repo Repo, id int) (result Webhook, err error)
-	//	ListAccessKeys(ctx context.Context, repo Repo) (result []AccessKey, err error)
-	//	UpdateAccessKeyPermission(ctx context.Context, repo Repo, id int, permission string) (err error)
+	UpdateWebhook(ctx context.Context, repo Repo, id int, webhook Webhook) (result Webhook, err error)
 }

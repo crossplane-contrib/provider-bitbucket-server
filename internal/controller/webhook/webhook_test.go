@@ -25,6 +25,7 @@ import (
 	"github.com/pkg/errors"
 
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
+	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/crossplane/crossplane-runtime/pkg/meta"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/test"
@@ -41,6 +42,10 @@ func withConditions(c ...xpv1.Condition) resourceModifier {
 
 func withExternalName(id int) resourceModifier {
 	return func(r *v1alpha1.Webhook) { meta.SetExternalName(r, fmt.Sprint(id)) }
+}
+
+func withURL(url string) resourceModifier {
+	return func(r *v1alpha1.Webhook) { r.Spec.ForProvider.Webhook.URL = url }
 }
 
 const (
@@ -66,7 +71,7 @@ func instance(rm ...resourceModifier) *v1alpha1.Webhook {
 					Configuration: v1alpha1.BitbucketWebhookConfiguration{
 						Secret: "123",
 					},
-					Events: []string{
+					Events: []v1alpha1.Event{
 						"repo:refs_changed",
 						"repo:modified",
 					},
@@ -109,9 +114,7 @@ func TestObserve(t *testing.T) {
 				cr: instance(withExternalName(99)),
 				r: &fake.MockWebhookClient{
 					MockGetWebhook: func(_ context.Context, repo bitbucket.Repo, id int) (result bitbucket.Webhook, err error) {
-						return bitbucket.Webhook{
-							// TODO
-						}, nil
+						return instance().Webhook(), nil
 					},
 				},
 			},
@@ -126,15 +129,12 @@ func TestObserve(t *testing.T) {
 				},
 			},
 		},
-		// TODO: What about immutable field changed?
 		"NotUpToDate": {
 			args: args{
 				cr: instance(withExternalName(99)),
 				r: &fake.MockWebhookClient{
 					MockGetWebhook: func(_ context.Context, repo bitbucket.Repo, id int) (result bitbucket.Webhook, err error) {
-						return bitbucket.Webhook{
-							// TODO
-						}, nil
+						return instance(withURL("https://other.example.com")).Webhook(), nil
 					},
 				},
 			},
@@ -194,6 +194,7 @@ func TestObserve(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			e := external{
 				service: tc.r,
+				log:     logging.NewNopLogger(),
 			}
 			o, err := e.Observe(context.Background(), tc.args.cr)
 			if diff := cmp.Diff(tc.want.cr, tc.args.cr); diff != "" {
@@ -221,6 +222,7 @@ func TestUpdate(t *testing.T) {
 	}
 
 	errorBoom := errors.New("error")
+	newURL := "https://other.example.com"
 
 	cases := map[string]struct {
 		args
@@ -228,13 +230,21 @@ func TestUpdate(t *testing.T) {
 	}{
 		"Successful": {
 			args: args{
-				cr: instance(withExternalName(99)),
-				r:  &fake.MockWebhookClient{
-					// TODO
+				cr: instance(withExternalName(99), withURL(newURL)),
+				r: &fake.MockWebhookClient{
+					MockGetWebhook: func(_ context.Context, repo bitbucket.Repo, id int) (result bitbucket.Webhook, err error) {
+						return instance().Webhook(), nil
+					},
+					MockUpdateWebhook: func(_ context.Context, repo bitbucket.Repo, id int, hook bitbucket.Webhook) (result bitbucket.Webhook, err error) {
+						if hook.URL != newURL {
+							t.Errorf("Update not called with desired URL")
+						}
+						return hook, nil
+					},
 				},
 			},
 			want: want{
-				cr: instance(withExternalName(99)),
+				cr: instance(withExternalName(99), withURL(newURL), withConditions(xpv1.Available())),
 				o: managed.ExternalUpdate{
 					ConnectionDetails: managed.ConnectionDetails{},
 				},
@@ -242,13 +252,18 @@ func TestUpdate(t *testing.T) {
 		},
 		"Failed": {
 			args: args{
-				cr: instance(withExternalName(99)),
-				r:  &fake.MockWebhookClient{
-					// TODO
+				cr: instance(withExternalName(99), withURL(newURL)),
+				r: &fake.MockWebhookClient{
+					MockGetWebhook: func(_ context.Context, repo bitbucket.Repo, id int) (result bitbucket.Webhook, err error) {
+						return instance().Webhook(), nil
+					},
+					MockUpdateWebhook: func(_ context.Context, repo bitbucket.Repo, id int, hook bitbucket.Webhook) (result bitbucket.Webhook, err error) {
+						return bitbucket.Webhook{}, errorBoom
+					},
 				},
 			},
 			want: want{
-				cr:  instance(withExternalName(99)),
+				cr:  instance(withExternalName(99), withURL(newURL)),
 				o:   managed.ExternalUpdate{},
 				err: errors.Wrap(errorBoom, errUpdateFailed),
 			},
@@ -343,7 +358,7 @@ func TestDelete(t *testing.T) {
 				},
 			},
 			want: want{
-				cr:  instance(withExternalName(99)),
+				cr:  instance(withExternalName(99), withConditions(xpv1.Deleting())),
 				err: errors.Wrap(errorBoom, errDeleteFailed),
 			},
 		},

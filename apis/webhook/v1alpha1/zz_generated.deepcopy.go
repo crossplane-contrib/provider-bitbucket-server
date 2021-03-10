@@ -30,7 +30,7 @@ func (in *BitbucketWebhook) DeepCopyInto(out *BitbucketWebhook) {
 	out.Configuration = in.Configuration
 	if in.Events != nil {
 		in, out := &in.Events, &out.Events
-		*out = make([]string, len(*in))
+		*out = make([]Event, len(*in))
 		copy(*out, *in)
 	}
 }

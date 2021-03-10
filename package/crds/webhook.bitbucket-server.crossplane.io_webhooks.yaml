@@ -68,10 +68,10 @@ spec:
                         - secret
                         type: object
                       events:
-                        enum:
-                        - repo:refs_changed
-                        - repo:modified
                         items:
+                          enum:
+                          - repo:refs_changed
+                          - repo:modified
                           type: string
                         type: array
                       name:

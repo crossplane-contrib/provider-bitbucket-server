@@ -28,16 +28,15 @@ var _ bitbucket.WebhookClientAPI = &MockWebhookClient{}
 type MockWebhookClient struct {
 	bitbucket.WebhookClientAPI
 
-	MockCreateWebhook func(ctx context.Context, repo bitbucket.Repo, key bitbucket.Webhook) (result bitbucket.Webhook, err error)
+	MockCreateWebhook func(ctx context.Context, repo bitbucket.Repo, hook bitbucket.Webhook) (result bitbucket.Webhook, err error)
 	MockDeleteWebhook func(ctx context.Context, repo bitbucket.Repo, id int) (err error)
 	MockGetWebhook    func(ctx context.Context, repo bitbucket.Repo, id int) (result bitbucket.Webhook, err error)
-	/*	MockListAccessKeys            func(ctx context.Context, repo bitbucket.Repo) (result []bitbucket.AccessKey, err error)
-		MockUpdateAccessKeyPermission func(ctx context.Context, repo bitbucket.Repo, id int, permission string) (err error)*/
+	MockUpdateWebhook func(ctx context.Context, repo bitbucket.Repo, id int, hook bitbucket.Webhook) (result bitbucket.Webhook, err error)
 }
 
 // CreateWebhook calls the mock
-func (c *MockWebhookClient) CreateWebhook(ctx context.Context, repo bitbucket.Repo, key bitbucket.Webhook) (result bitbucket.Webhook, err error) {
-	return c.MockCreateWebhook(ctx, repo, key)
+func (c *MockWebhookClient) CreateWebhook(ctx context.Context, repo bitbucket.Repo, hook bitbucket.Webhook) (result bitbucket.Webhook, err error) {
+	return c.MockCreateWebhook(ctx, repo, hook)
 }
 
 // DeleteWebhook calls the mock
@@ -50,14 +49,7 @@ func (c *MockWebhookClient) GetWebhook(ctx context.Context, repo bitbucket.Repo,
 	return c.MockGetWebhook(ctx, repo, id)
 }
 
-/*
-// ListWebhooks calls the mock
-func (c *MockWebhookClient) ListWebhooks(ctx context.Context, repo bitbucket.Repo) (result []bitbucket.Webhook, err error) {
-	return c.MockListWebhooks(ctx, repo)
+// UpdateWebhook calls the mock
+func (c *MockWebhookClient) UpdateWebhook(ctx context.Context, repo bitbucket.Repo, id int, hook bitbucket.Webhook) (result bitbucket.Webhook, err error) {
+	return c.MockUpdateWebhook(ctx, repo, id, hook)
 }
-
-// UpdateWebhookPermission calls the mock
-func (c *MockWebhookClient) UpdateWebhookPermission(ctx context.Context, repo bitbucket.Repo, id int, permission string) error {
-	return c.MockUpdateWebhookPermission(ctx, repo, id, permission)
-}
-*/

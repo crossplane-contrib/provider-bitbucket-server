@@ -19,8 +19,11 @@ package webhook
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strconv"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/workqueue"
@@ -50,10 +53,10 @@ const (
 
 	errNewClient = "cannot create new Service"
 
-	errGetFailed    = "cannot get access key from bitbucket API"
-	errDeleteFailed = "cannot delete access key from bitbucket API"
-	errCreateFailed = "cannot create access key with bitbucket API"
-	errUpdateFailed = "cannot update access permission key with bitbucket API"
+	errGetFailed    = "cannot get webhook from bitbucket API"
+	errDeleteFailed = "cannot delete webhook from bitbucket API"
+	errCreateFailed = "cannot create webhook with bitbucket API"
+	errUpdateFailed = "cannot update webhook with bitbucket API"
 )
 
 // Setup adds a controller that reconciles Webhook managed resources.
@@ -68,6 +71,7 @@ func Setup(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
 		resource.ManagedKind(v1alpha1.WebhookGroupVersionKind),
 		managed.WithExternalConnecter(&connector{
 			kube:         mgr.GetClient(),
+			log:          l,
 			usage:        resource.NewProviderConfigUsageTracker(mgr.GetClient(), &apisv1alpha1.ProviderConfigUsage{}),
 			newServiceFn: clients.NewWebhookClient}),
 		managed.WithLogger(l.WithValues("controller", name)),
@@ -85,6 +89,7 @@ func Setup(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
 type connector struct {
 	kube         client.Client
 	usage        resource.Tracker
+	log          logging.Logger
 	newServiceFn func(clients.Config) bitbucket.WebhookClientAPI
 }
 
@@ -119,7 +124,7 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 		Token:   string(data),
 	})
 
-	return &external{service: svc}, nil
+	return &external{service: svc, log: c.log}, nil
 }
 
 // An ExternalClient observes, then either creates, updates, or deletes an
@@ -128,6 +133,7 @@ type external struct {
 	// A 'client' used to connect to the external resource API. In practice this
 	// would be something like an AWS SDK client.
 	service bitbucket.WebhookClientAPI
+	log     logging.Logger
 }
 
 func (c *external) Observe(ctx context.Context, mg resource.Managed) (managed.ExternalObservation, error) {
@@ -147,7 +153,6 @@ func (c *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 	}
 
 	hook, err := c.service.GetWebhook(ctx, cr.Repo(), id)
-	_ = hook // TODO
 	if err != nil {
 		if errors.Is(err, bitbucket.ErrNotFound) {
 			return managed.ExternalObservation{}, nil
@@ -155,7 +160,21 @@ func (c *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 		return managed.ExternalObservation{}, errors.Wrap(err, errGetFailed)
 	}
 
-	// TODO: key.Key == cr.Spec.ForProvider.PublicKey.Key ?
+	ignoreEventOrder := cmp.Transformer("Sort", func(webhook bitbucket.Webhook) bitbucket.Webhook {
+		webhook.Events = append([]string(nil), webhook.Events...) // Copy input to avoid mutating it
+
+		sort.Strings(webhook.Events)
+		return webhook
+	})
+
+	ignoreID := cmpopts.IgnoreFields(bitbucket.Webhook{}, "ID")
+
+	diff := cmp.Diff(cr.Webhook(), hook, ignoreEventOrder, ignoreID)
+
+	upToDate := diff == ""
+	if !upToDate {
+		c.log.Debug("Not up to date", "diff", diff)
+	}
 
 	return managed.ExternalObservation{
 		// Return false when the external resource does not exist. This lets
@@ -166,7 +185,7 @@ func (c *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 		// Return false when the external resource exists, but it not up to date
 		// with the desired managed resource state. This lets the managed
 		// resource reconciler know that it needs to call Update.
-		ResourceUpToDate: false, // TODO
+		ResourceUpToDate: upToDate,
 
 		// Return any details that may be required to connect to the external
 		// resource. These will be stored as the connection secret.
@@ -215,12 +234,11 @@ func (c *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 	}
 
 	id, _ := strconv.Atoi(meta.GetExternalName(cr))
-	_ = id // TODO
-	/*
-		if err := c.service.UpdateWebhookPermission(ctx, cr.Repo(), id, cr.Spec.ForProvider.PublicKey.Permission); err != nil {
-			return managed.ExternalUpdate{}, errors.Wrap(err, errUpdateFailed)
-		}
-	*/
+	if _, err := c.service.UpdateWebhook(ctx, cr.Repo(), id, cr.Webhook()); err != nil {
+		return managed.ExternalUpdate{}, errors.Wrap(err, errUpdateFailed)
+	}
+
+	cr.Status.SetConditions(xpv1.Available())
 
 	return managed.ExternalUpdate{
 		// Optionally return any details that may be required to connect to the
@@ -235,12 +253,12 @@ func (c *external) Delete(ctx context.Context, mg resource.Managed) error {
 		return errors.New(errNotWebhook)
 	}
 
+	cr.Status.SetConditions(xpv1.Deleting())
+
 	id, _ := strconv.Atoi(meta.GetExternalName(cr)) // TODO err
 	if err := c.service.DeleteWebhook(ctx, cr.Repo(), id); err != nil {
 		return errors.Wrap(err, errDeleteFailed)
 	}
-
-	cr.Status.SetConditions(xpv1.Deleting())
 
 	return nil
 }

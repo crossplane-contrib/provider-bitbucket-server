@@ -28,7 +28,7 @@ import (
 )
 
 func (c *Client) GetWebhook(ctx context.Context, repo bitbucket.Repo, id int) (bitbucket.Webhook, error) {
-	url := c.BaseURL + fmt.Sprintf("/rest/1.0/projects/%s/repos/%s/webhooks/%d",
+	url := c.BaseURL + fmt.Sprintf("/rest/api/1.0/projects/%s/repos/%s/webhooks/%d",
 		url.PathEscape(repo.ProjectKey), url.PathEscape(repo.Repo), id)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
@@ -36,27 +36,21 @@ func (c *Client) GetWebhook(ctx context.Context, repo bitbucket.Repo, id int) (b
 	}
 
 	// The documentation says this is a paged API but it is not
-	var payload KeyDescription
+	var payload bitbucket.Webhook
 	if err := c.sendRequest(req, &payload); err != nil {
 		return bitbucket.Webhook{}, fmt.Errorf("GetWebhook(%+v, %d): %w", repo, id, err)
 	}
 
-	return bitbucket.Webhook{
-		// TODO
-	}, nil
+	return payload, nil
 }
 
-func (c *Client) CreateWebhook(ctx context.Context, repo bitbucket.Repo, key bitbucket.Webhook) (bitbucket.Webhook, error) {
-	payload := UploadKeyPayload{
-		// TODO
-	}
-
-	marshalledPayload, err := json.Marshal(payload)
+func (c *Client) CreateWebhook(ctx context.Context, repo bitbucket.Repo, hook bitbucket.Webhook) (bitbucket.Webhook, error) {
+	marshalledPayload, err := json.Marshal(hook)
 	if err != nil {
 		return bitbucket.Webhook{}, err
 	}
 
-	url := c.BaseURL + fmt.Sprintf("/rest/1.0/projects/%s/repos/%s/webhooks",
+	url := c.BaseURL + fmt.Sprintf("/rest/api/1.0/projects/%s/repos/%s/webhooks",
 		url.PathEscape(repo.ProjectKey), url.PathEscape(repo.Repo))
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(marshalledPayload))
@@ -64,17 +58,36 @@ func (c *Client) CreateWebhook(ctx context.Context, repo bitbucket.Repo, key bit
 		return bitbucket.Webhook{}, err
 	}
 
-	var response KeyDescription
+	var response bitbucket.Webhook
 	if err := c.sendRequest(req, &response); err != nil {
 		return bitbucket.Webhook{}, err
 	}
-	return bitbucket.Webhook{
-		// TODO
-	}, nil
+	return response, nil
+}
+
+func (c *Client) UpdateWebhook(ctx context.Context, repo bitbucket.Repo, id int, hook bitbucket.Webhook) (bitbucket.Webhook, error) {
+	marshalledPayload, err := json.Marshal(hook)
+	if err != nil {
+		return bitbucket.Webhook{}, err
+	}
+
+	url := c.BaseURL + fmt.Sprintf("/rest/api/1.0/projects/%s/repos/%s/webhooks/%d",
+		url.PathEscape(repo.ProjectKey), url.PathEscape(repo.Repo), id)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPut, url, bytes.NewBuffer(marshalledPayload))
+	if err != nil {
+		return bitbucket.Webhook{}, err
+	}
+
+	var response bitbucket.Webhook
+	if err := c.sendRequest(req, &response); err != nil {
+		return bitbucket.Webhook{}, err
+	}
+	return response, nil
 }
 
 func (c *Client) DeleteWebhook(ctx context.Context, repo bitbucket.Repo, id int) error {
-	url := c.BaseURL + fmt.Sprintf("/rest/1.0/projects/%s/repos/%s/webhooks/%d",
+	url := c.BaseURL + fmt.Sprintf("/rest/api/1.0/projects/%s/repos/%s/webhooks/%d",
 		url.PathEscape(repo.ProjectKey), url.PathEscape(repo.Repo), id)
 	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, url, nil)
 	if err != nil {

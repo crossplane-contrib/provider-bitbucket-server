@@ -26,24 +26,6 @@ import (
 /*
 https://docs.atlassian.com/bitbucket-server/rest/7.10.0/bitbucket-rest.html
 
-   TODO: As you can send in the ID, can you also update a hook
-
-   TODO: Webhook vs. Webhook?
-
-
-   {
-    "id": 10,
-    "name": "Webhook Name",
-    "createdDate": 1513106011000,
-    "updatedDate": 1513106011000,
-    "events": [
-        "repo:refs_changed",
-        "repo:modified"
-    ],
-    "configuration": {
-        "secret": "password"
-    },
-    "url": "http://example.com",
     "active": true
     }
 */
@@ -70,17 +52,22 @@ type BitbucketWebhook struct {
 	// +immutable
 	Configuration BitbucketWebhookConfiguration `json:"configuration"`
 
-	// +kubebuilder:validation:Enum="repo:refs_changed";"repo:modified"
-	Events []string `json:"events"`
+	Events []Event `json:"events"`
 
 	URL string `json:"url"`
 
 	// active bool
 }
 
+// TODO: Look up all options
+
+// +kubebuilder:validation:Enum="repo:refs_changed";"repo:modified"
+type Event string
+
 type BitbucketWebhookConfiguration struct {
 	Secret string `json:"secret"`
-	// TODO: ref
+	// TODO: ref as an option
+	// TODO: Generate as an option, output connection secret
 }
 
 // WebhookObservation are the observable fields of an Webhook.
@@ -126,12 +113,16 @@ func (a Webhook) Repo() bitbucket.Repo {
 }
 
 func (a Webhook) Webhook() bitbucket.Webhook {
+	var events []string
+	for _, ev := range a.Spec.ForProvider.Webhook.Events {
+		events = append(events, string(ev))
+	}
 	return bitbucket.Webhook{
-		// ID: a.Spec.ForProvider.
+		// ID: get from CR? meta.GetExternalName?
 
 		Name:          a.Spec.ForProvider.Webhook.Name,
 		Configuration: a.Spec.ForProvider.Webhook.Configuration,
-		Events:        a.Spec.ForProvider.Webhook.Events,
+		Events:        events,
 		URL:           a.Spec.ForProvider.Webhook.URL,
 	}
 }
