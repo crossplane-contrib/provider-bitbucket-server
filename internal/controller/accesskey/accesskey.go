@@ -114,12 +114,11 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 		return nil, errors.Wrap(err, errGetCreds)
 	}
 
-	_ = data
-	svc := c.newServiceFn(clients.Config{}) //.Data[ref.Key])
-	/*	if err != nil {
-			return nil, errors.Wrap(err, errNewClient)
-		}
-	*/
+	svc := c.newServiceFn(clients.Config{
+		BaseURL: pc.Spec.BaseURL,
+		Token:   string(data),
+	})
+
 	return &external{service: svc}, nil
 }
 

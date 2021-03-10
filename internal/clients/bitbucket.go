@@ -17,10 +17,13 @@ limitations under the License.
 package clients
 
 import (
+	"net/http"
+
 	"github.com/crossplane/provider-bitbucket-server/internal/clients/bitbucket"
+	"github.com/crossplane/provider-bitbucket-server/internal/clients/rest"
 )
 
-// Config provides gitlab configurations for the bitbucket client
+// Config provides configuration for the bitbucket client
 type Config struct {
 	Token   string
 	BaseURL string
@@ -28,5 +31,9 @@ type Config struct {
 
 // NewClient creates new Bitbucket Client with provided base URL and credentials
 func NewClient(c Config) bitbucket.KeyClientAPI {
-	return nil
+	return &rest.Client{
+		Token:      c.Token,
+		BaseURL:    c.BaseURL,
+		HTTPClient: http.DefaultClient,
+	}
 }
