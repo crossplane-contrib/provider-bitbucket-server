@@ -1,7 +1,7 @@
 # provider-bitbucket-server
 
 `provider-bitbucket-server` is a [Crossplane](https://crossplane.io/)
-Provider that is meant to integrate with the bitbucket server APIs.
+provider that is meant to integrate with Bitbucket Server or Bitbucket Data Center APIs.
 
 It does not support the API for Bitbucket Cloud.
 
