@@ -24,6 +24,8 @@ generate:
 	go generate ./...
 	@find package/crds -name *.yaml -exec sed -i.sed -e '1,2d' {} \;
 	@find package/crds -name *.yaml.sed -delete
+	go install github.com/campoy/embedmd@latest
+	embedmd -w README.md
 
 lint:
 	$(LINT) run
