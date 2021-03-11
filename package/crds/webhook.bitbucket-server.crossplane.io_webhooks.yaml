@@ -6,14 +6,14 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.3.0
   creationTimestamp: null
-  name: accesskeys.accesskey.bitbucket-server.crossplane.io
+  name: webhooks.webhook.bitbucket-server.crossplane.io
 spec:
-  group: accesskey.bitbucket-server.crossplane.io
+  group: webhook.bitbucket-server.crossplane.io
   names:
-    kind: AccessKey
-    listKind: AccessKeyList
-    plural: accesskeys
-    singular: accesskey
+    kind: Webhook
+    listKind: WebhookList
+    plural: webhooks
+    singular: webhook
   scope: Cluster
   versions:
   - additionalPrinterColumns:
@@ -32,7 +32,7 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: An AccessKey is an SSH key with read or write access to a bitbucket git repo.
+        description: An Webhook is an SSH key with read or write access to a bitbucket git repo.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
@@ -43,7 +43,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: An AccessKeySpec defines the desired state of an AccessKey.
+            description: An WebhookSpec defines the desired state of an Webhook.
             properties:
               deletionPolicy:
                 description: DeletionPolicy specifies what will happen to the underlying external when this managed resource is deleted - either "Delete" or "Orphan" the external resource. The "Delete" policy is the default when no policy is specified.
@@ -52,38 +52,44 @@ spec:
                 - Delete
                 type: string
               forProvider:
-                description: AccessKeyParameters are the configurable fields of a AccessKey.
+                description: WebhookParameters are the configurable fields of a Webhook.
                 properties:
                   projectKey:
                     description: The project key is the short name for the project for a repository. Typically the key for a project called "Foo Bar" would be "FB".
                     type: string
-                  publicKey:
-                    description: PublicKey contains the information about the public key. Only the permission field is mutable.
-                    properties:
-                      key:
-                        description: The ssh-key with access to the git repo.
-                        pattern: (ssh|ecdsa)-[a-z0-9-]+ .*
-                        type: string
-                      label:
-                        description: Label
-                        type: string
-                      permission:
-                        enum:
-                        - REPO_READ
-                        - REPO_WRITE
-                        type: string
-                    required:
-                    - key
-                    - label
-                    - permission
-                    type: object
                   repoName:
                     description: The repoName is the name of the git repository.
                     type: string
+                  webhook:
+                    properties:
+                      configuration:
+                        properties:
+                          secret:
+                            type: string
+                        required:
+                        - secret
+                        type: object
+                      events:
+                        items:
+                          enum:
+                          - repo:refs_changed
+                          - repo:modified
+                          type: string
+                        type: array
+                      name:
+                        type: string
+                      url:
+                        type: string
+                    required:
+                    - configuration
+                    - events
+                    - name
+                    - url
+                    type: object
                 required:
                 - projectKey
-                - publicKey
                 - repoName
+                - webhook
                 type: object
               providerConfigRef:
                 description: ProviderConfigReference specifies how the provider that will be used to create, observe, update, and delete this managed resource should be configured.
@@ -120,12 +126,13 @@ spec:
             - forProvider
             type: object
           status:
-            description: An AccessKeyStatus represents the observed state of an AccessKey.
+            description: An WebhookStatus represents the observed state of an Webhook.
             properties:
               atProvider:
-                description: AccessKeyObservation are the observable fields of an AccessKey.
+                description: WebhookObservation are the observable fields of an Webhook.
                 properties:
                   id:
+                    description: Consider stats here?
                     type: integer
                 type: object
               conditions:

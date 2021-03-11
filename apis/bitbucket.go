@@ -22,6 +22,7 @@ import (
 
 	accesskeyv1alpha1 "github.com/crossplane/provider-bitbucket-server/apis/accesskey/v1alpha1"
 	bitbucketv1alpha1 "github.com/crossplane/provider-bitbucket-server/apis/v1alpha1"
+	webhookv1alpha1 "github.com/crossplane/provider-bitbucket-server/apis/webhook/v1alpha1"
 )
 
 func init() {
@@ -29,6 +30,7 @@ func init() {
 	AddToSchemes = append(AddToSchemes,
 		bitbucketv1alpha1.SchemeBuilder.AddToScheme,
 		accesskeyv1alpha1.SchemeBuilder.AddToScheme,
+		webhookv1alpha1.SchemeBuilder.AddToScheme,
 	)
 }
 

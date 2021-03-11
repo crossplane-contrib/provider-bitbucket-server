@@ -48,3 +48,27 @@ type AccessKey struct {
 	ID         int
 	Permission string
 }
+
+type Webhook struct {
+	ID int `json:"id"`
+
+	Name string `json:"name"`
+
+	Configuration struct {
+		Secret string `json:"secret"`
+	} `json:"configuration"`
+
+	Events []string `json:"events"`
+
+	URL string `json:"url"`
+
+	// active bool
+}
+
+// WebhookClientAPI is the API for creating/listing/deleting/getting webhooks
+type WebhookClientAPI interface {
+	CreateWebhook(ctx context.Context, repo Repo, webhook Webhook) (result Webhook, err error)
+	DeleteWebhook(ctx context.Context, repo Repo, id int) (err error)
+	GetWebhook(ctx context.Context, repo Repo, id int) (result Webhook, err error)
+	UpdateWebhook(ctx context.Context, repo Repo, id int, webhook Webhook) (result Webhook, err error)
+}

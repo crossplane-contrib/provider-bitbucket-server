@@ -1,0 +1,18 @@
+apiVersion: webhook.bitbucket-server.crossplane.io/v1alpha1
+kind: Webhook
+metadata:
+  name: example
+spec:
+  forProvider:
+    projectKey: TEST
+    repoName: test
+    webhook:
+      name: "build-trigger"
+      configuration:
+        secret: "123"
+      events:
+        - "repo:refs_changed"
+        - "repo:modified"
+      url: "https://hooks.example.com/test"
+  providerConfigRef:
+    name: example
