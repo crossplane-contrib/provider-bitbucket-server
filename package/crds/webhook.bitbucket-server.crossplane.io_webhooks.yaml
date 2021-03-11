@@ -65,9 +65,8 @@ spec:
                       configuration:
                         properties:
                           secret:
+                            description: Webhook secret. Leave empty to get a secret in the connection details
                             type: string
-                        required:
-                        - secret
                         type: object
                       events:
                         items:

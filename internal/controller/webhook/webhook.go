@@ -18,6 +18,8 @@ package webhook
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/base64"
 	"fmt"
 	"sort"
 	"strconv"
@@ -193,18 +195,6 @@ func (c *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 	}, nil
 }
 
-func (c *external) create(ctx context.Context, cr *v1alpha1.Webhook) error {
-	key, err := c.service.CreateWebhook(ctx, cr.Repo(), cr.Webhook())
-	if err != nil {
-		return err
-	}
-
-	meta.SetExternalName(cr, fmt.Sprint(key.ID))
-	cr.Status.SetConditions(xpv1.Available())
-	//	cr.Status.AtProvider.ID = key.ID TODO do we want this?
-	return nil
-}
-
 func (c *external) Create(ctx context.Context, mg resource.Managed) (managed.ExternalCreation, error) {
 	cr, ok := mg.(*v1alpha1.Webhook)
 	if !ok {
@@ -213,16 +203,33 @@ func (c *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 
 	cr.Status.SetConditions(xpv1.Creating())
 
-	if err := c.create(ctx, cr); err != nil {
+	hook := cr.Webhook()
+	if hook.Configuration.Secret == "" {
+		b := make([]byte, 20)
+		_, err := rand.Read(b)
+		if err != nil {
+			return managed.ExternalCreation{}, errors.Wrap(err, "could not generate random password")
+		}
+
+		hook.Configuration.Secret = base64.StdEncoding.EncodeToString(b)
+	}
+
+	key, err := c.service.CreateWebhook(ctx, cr.Repo(), hook)
+	if err != nil {
 		return managed.ExternalCreation{}, errors.Wrap(err, errCreateFailed)
 	}
 
+	meta.SetExternalName(cr, fmt.Sprint(key.ID))
 	cr.Status.SetConditions(xpv1.Available())
+
+	//	cr.Status.AtProvider.ID = key.ID TODO do we want this?
 
 	return managed.ExternalCreation{
 		// Optionally return any details that may be required to connect to the
 		// external resource. These will be stored as the connection secret.
-		ConnectionDetails:    managed.ConnectionDetails{},
+		ConnectionDetails: managed.ConnectionDetails{
+			"secret": []byte(hook.Configuration.Secret),
+		},
 		ExternalNameAssigned: true,
 	}, nil
 }
@@ -240,11 +247,7 @@ func (c *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 
 	cr.Status.SetConditions(xpv1.Available())
 
-	return managed.ExternalUpdate{
-		// Optionally return any details that may be required to connect to the
-		// external resource. These will be stored as the connection secret.
-		ConnectionDetails: managed.ConnectionDetails{},
-	}, nil
+	return managed.ExternalUpdate{}, nil
 }
 
 func (c *external) Delete(ctx context.Context, mg resource.Managed) error {

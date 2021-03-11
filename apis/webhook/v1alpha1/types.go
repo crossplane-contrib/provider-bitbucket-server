@@ -63,6 +63,8 @@ type BitbucketWebhook struct {
 type Event string
 
 type BitbucketWebhookConfiguration struct {
+	// Webhook secret. Leave empty to get a secret in the connection details
+	// +kubebuilder:validation:Optional
 	Secret string `json:"secret"`
 	// TODO: ref as an option
 	// TODO: Generate as an option, output connection secret
