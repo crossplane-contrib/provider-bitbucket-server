@@ -46,10 +46,8 @@ type WebhookParameters struct {
 }
 
 type BitbucketWebhook struct {
-	// +immutable
 	Name string `json:"name"`
 
-	// +immutable
 	Configuration BitbucketWebhookConfiguration `json:"configuration"`
 
 	Events []Event `json:"events"`
