@@ -9,7 +9,7 @@ The scope of the current feature set is to provide enough resources to provision
 
 ## Configure
 
-Create a secret containing an API token (go to Profile, Manage account, Personal Access Token), and configure a Bitbucket Server ProviderConfig with a BaseURL pointing to your bitbucket server:
+Create a secret containing an API token (for a personal token, go to `Profile > Manage account > Personal Access Token`), and configure a Bitbucket Server ProviderConfig with a BaseURL pointing to your bitbucket server:
 [embedmd]:# (examples/provider/config.yaml yaml)
 ```yaml
 apiVersion: v1
