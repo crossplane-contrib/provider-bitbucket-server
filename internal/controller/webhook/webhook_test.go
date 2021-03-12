@@ -40,6 +40,10 @@ func withConditions(c ...xpv1.Condition) resourceModifier {
 	return func(r *v1alpha1.Webhook) { r.Status.ConditionedStatus.Conditions = c }
 }
 
+func withSecret(secret string) resourceModifier {
+	return func(r *v1alpha1.Webhook) { r.Spec.ForProvider.Webhook.Configuration.Secret = secret }
+}
+
 func withExternalName(id int) resourceModifier {
 	return func(r *v1alpha1.Webhook) { meta.SetExternalName(r, fmt.Sprint(id)) }
 }
@@ -210,6 +214,116 @@ func TestObserve(t *testing.T) {
 	}
 }
 
+func TestCreate(t *testing.T) {
+	type args struct {
+		cr *v1alpha1.Webhook
+		r  bitbucket.WebhookClientAPI
+	}
+	type want struct {
+		cr  *v1alpha1.Webhook
+		o   managed.ExternalCreation
+		err error
+	}
+
+	errorBoom := errors.New("error")
+	secretMarker := []byte("random secret made static for tests")
+
+	cases := map[string]struct {
+		args
+		want
+	}{
+		"SuccessfulLiteralSecret": {
+			args: args{
+				cr: instance(),
+				r: &fake.MockWebhookClient{
+					MockCreateWebhook: func(_ context.Context, repo bitbucket.Repo, hook bitbucket.Webhook) (result bitbucket.Webhook, err error) {
+						hook.ID = 22
+						return hook, nil
+					},
+				},
+			},
+			want: want{
+				cr: instance(withConditions(xpv1.Available()), withExternalName(22)),
+				o: managed.ExternalCreation{
+					ExternalNameAssigned: true,
+					ConnectionDetails: managed.ConnectionDetails{
+						"secret": []byte("123"),
+					},
+				},
+			},
+		},
+		"SuccessfulGenerateSecret": {
+			args: args{
+				cr: instance(withSecret("")),
+				r: &fake.MockWebhookClient{
+					MockCreateWebhook: func(_ context.Context, repo bitbucket.Repo, hook bitbucket.Webhook) (result bitbucket.Webhook, err error) {
+						hook.ID = 22
+						return hook, nil
+					},
+				},
+			},
+			want: want{
+				cr: instance(withConditions(xpv1.Available()), withExternalName(22), withSecret("")),
+				o: managed.ExternalCreation{
+					ExternalNameAssigned: true,
+					ConnectionDetails: managed.ConnectionDetails{
+						"secret": secretMarker,
+					},
+				},
+			},
+		},
+		"Failed": {
+			args: args{
+				cr: instance(),
+				r: &fake.MockWebhookClient{
+					MockCreateWebhook: func(_ context.Context, repo bitbucket.Repo, hook bitbucket.Webhook) (result bitbucket.Webhook, err error) {
+						return bitbucket.Webhook{}, errorBoom
+					},
+				},
+			},
+			want: want{
+				cr:  instance(withConditions(xpv1.Creating())),
+				o:   managed.ExternalCreation{},
+				err: errors.Wrap(errorBoom, errCreateFailed),
+			},
+		},
+
+		/*		"NoExternalName": {
+					args: args{
+						cr: instance(),
+					},
+					want: want{
+						cr: instance(),
+						o: managed.ExternalObservation{
+							ResourceExists: false,
+						},
+					},
+				},
+			},*/
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			e := external{
+				service: tc.r,
+			}
+			o, err := e.Create(context.Background(), tc.args.cr)
+			if diff := cmp.Diff(tc.want.cr, tc.args.cr); diff != "" {
+				t.Errorf("Update(...): -want, +got\n%s", diff)
+			}
+			if diff := cmp.Diff(tc.want.err, err, test.EquateErrors()); diff != "" {
+				t.Errorf("Update(...): -want, +got\n%s", diff)
+			}
+			if o.ConnectionDetails != nil && len(o.ConnectionDetails["secret"]) > 5 {
+				o.ConnectionDetails["secret"] = secretMarker
+			}
+			if diff := cmp.Diff(tc.want.o, o); diff != "" {
+				t.Errorf("Update(...): -want, +got\n%s", diff)
+			}
+		})
+	}
+}
+
 func TestUpdate(t *testing.T) {
 	type args struct {
 		cr *v1alpha1.Webhook
@@ -245,9 +359,7 @@ func TestUpdate(t *testing.T) {
 			},
 			want: want{
 				cr: instance(withExternalName(99), withURL(newURL), withConditions(xpv1.Available())),
-				o: managed.ExternalUpdate{
-					ConnectionDetails: managed.ConnectionDetails{},
-				},
+				o:  managed.ExternalUpdate{},
 			},
 		},
 		"Failed": {
