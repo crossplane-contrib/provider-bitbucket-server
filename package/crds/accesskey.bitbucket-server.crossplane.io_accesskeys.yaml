@@ -62,7 +62,7 @@ spec:
                     properties:
                       key:
                         description: The ssh-key with access to the git repo. Leave empty to get a ssh-privatekey in the connection details
-                        pattern: (ssh|ecdsa)-[a-z0-9-]+ .*
+                        pattern: ((ssh|ecdsa)-[a-z0-9-]+ .*|)
                         type: string
                       label:
                         description: Label
@@ -126,6 +126,25 @@ spec:
                 properties:
                   id:
                     type: integer
+                  publicKey:
+                    description: PublicKey contains the information about the public key. Only the permission field is mutable.
+                    properties:
+                      key:
+                        description: The ssh-key with access to the git repo. Leave empty to get a ssh-privatekey in the connection details
+                        pattern: ((ssh|ecdsa)-[a-z0-9-]+ .*|)
+                        type: string
+                      label:
+                        description: Label
+                        type: string
+                      permission:
+                        enum:
+                        - REPO_READ
+                        - REPO_WRITE
+                        type: string
+                    required:
+                    - label
+                    - permission
+                    type: object
                 type: object
               conditions:
                 description: Conditions of the resource.

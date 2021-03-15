@@ -287,19 +287,6 @@ func TestCreate(t *testing.T) {
 				err: errors.Wrap(errorBoom, errCreateFailed),
 			},
 		},
-
-		/*		"NoExternalName": {
-					args: args{
-						cr: instance(),
-					},
-					want: want{
-						cr: instance(),
-						o: managed.ExternalObservation{
-							ResourceExists: false,
-						},
-					},
-				},
-			},*/
 	}
 
 	for name, tc := range cases {

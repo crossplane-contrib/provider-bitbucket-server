@@ -50,8 +50,8 @@ type PublicKey struct {
 
 	// The ssh-key with access to the git repo. Leave empty to get a ssh-privatekey in the connection details
 	// +kubebuilder:validation:Optional
-	// +kubebuilder:validation:Pattern=(ssh|ecdsa)-[a-z0-9-]+ .*
-	Key string `json:"key"`
+	// +kubebuilder:validation:Pattern=((ssh|ecdsa)-[a-z0-9-]+ .*|)
+	Key string `json:"key,omitempty"`
 
 	// +kubebuilder:validation:Enum=REPO_READ;REPO_WRITE
 	Permission string `json:"permission"`
@@ -59,7 +59,10 @@ type PublicKey struct {
 
 // AccessKeyObservation are the observable fields of an AccessKey.
 type AccessKeyObservation struct {
+	// +kubebuilder:validation:Optional
 	ID int `json:"id,omitempty"`
+	// +kubebuilder:validation:Optional
+	Key *PublicKey `json:"publicKey,omitempty"`
 }
 
 // An AccessKeySpec defines the desired state of an AccessKey.
