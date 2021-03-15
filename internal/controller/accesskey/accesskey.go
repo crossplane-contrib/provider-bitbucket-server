@@ -161,7 +161,12 @@ func (c *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 		return managed.ExternalObservation{}, errors.Wrap(err, errGetFailed)
 	}
 
-	// TODO: key.Key == cr.Spec.ForProvider.PublicKey.Key ?
+	cr.Status.AtProvider.ID = key.ID
+	cr.Status.AtProvider.Key = &v1alpha1.PublicKey{
+		Key:        key.Key,
+		Label:      key.Label,
+		Permission: key.Permission,
+	}
 
 	return managed.ExternalObservation{
 		// Return false when the external resource does not exist. This lets
@@ -188,7 +193,12 @@ func (c *external) create(ctx context.Context, cr *v1alpha1.AccessKey) error {
 
 	meta.SetExternalName(cr, fmt.Sprint(key.ID))
 	cr.Status.SetConditions(xpv1.Available())
-	//	cr.Status.AtProvider.ID = key.ID TODO do we want this?
+	cr.Status.AtProvider.ID = key.ID
+	cr.Status.AtProvider.Key = &v1alpha1.PublicKey{
+		Key:        key.Key,
+		Label:      key.Label,
+		Permission: key.Permission,
+	}
 	return nil
 }
 
