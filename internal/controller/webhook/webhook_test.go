@@ -226,7 +226,7 @@ func TestCreate(t *testing.T) {
 	}
 
 	errorBoom := errors.New("error")
-	secretMarker := []byte("random secret made static for tests")
+	mockSecret := []byte("random secret made static for tests")
 
 	cases := map[string]struct {
 		args
@@ -247,7 +247,7 @@ func TestCreate(t *testing.T) {
 				o: managed.ExternalCreation{
 					ExternalNameAssigned: true,
 					ConnectionDetails: managed.ConnectionDetails{
-						"secret": []byte("123"),
+						"secret": []byte(instance().Webhook().Configuration.Secret),
 					},
 				},
 			},
@@ -267,7 +267,7 @@ func TestCreate(t *testing.T) {
 				o: managed.ExternalCreation{
 					ExternalNameAssigned: true,
 					ConnectionDetails: managed.ConnectionDetails{
-						"secret": secretMarker,
+						"secret": mockSecret,
 					},
 				},
 			},
@@ -287,25 +287,13 @@ func TestCreate(t *testing.T) {
 				err: errors.Wrap(errorBoom, errCreateFailed),
 			},
 		},
-
-		/*		"NoExternalName": {
-					args: args{
-						cr: instance(),
-					},
-					want: want{
-						cr: instance(),
-						o: managed.ExternalObservation{
-							ResourceExists: false,
-						},
-					},
-				},
-			},*/
 	}
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 			e := external{
 				service: tc.r,
+				pwgen:   func() (string, error) { return string(mockSecret), nil },
 			}
 			o, err := e.Create(context.Background(), tc.args.cr)
 			if diff := cmp.Diff(tc.want.cr, tc.args.cr); diff != "" {
@@ -313,9 +301,6 @@ func TestCreate(t *testing.T) {
 			}
 			if diff := cmp.Diff(tc.want.err, err, test.EquateErrors()); diff != "" {
 				t.Errorf("Update(...): -want, +got\n%s", diff)
-			}
-			if o.ConnectionDetails != nil && len(o.ConnectionDetails["secret"]) > 5 {
-				o.ConnectionDetails["secret"] = secretMarker
 			}
 			if diff := cmp.Diff(tc.want.o, o); diff != "" {
 				t.Errorf("Update(...): -want, +got\n%s", diff)

@@ -126,7 +126,7 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 		Token:   string(data),
 	})
 
-	return &external{service: svc, log: c.log}, nil
+	return &external{service: svc, log: c.log, pwgen: pwgen}, nil
 }
 
 // An ExternalClient observes, then either creates, updates, or deletes an
@@ -136,6 +136,7 @@ type external struct {
 	// would be something like an AWS SDK client.
 	service bitbucket.WebhookClientAPI
 	log     logging.Logger
+	pwgen   func() (string, error)
 }
 
 func (c *external) Observe(ctx context.Context, mg resource.Managed) (managed.ExternalObservation, error) {
@@ -195,6 +196,15 @@ func (c *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 	}, nil
 }
 
+func pwgen() (string, error) {
+	b := make([]byte, 20)
+	_, err := rand.Read(b)
+	if err != nil {
+		return "", err
+	}
+	return base64.StdEncoding.EncodeToString(b), nil
+}
+
 func (c *external) Create(ctx context.Context, mg resource.Managed) (managed.ExternalCreation, error) {
 	cr, ok := mg.(*v1alpha1.Webhook)
 	if !ok {
@@ -205,13 +215,12 @@ func (c *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 
 	hook := cr.Webhook()
 	if hook.Configuration.Secret == "" {
-		b := make([]byte, 20)
-		_, err := rand.Read(b)
+		secret, err := c.pwgen()
 		if err != nil {
 			return managed.ExternalCreation{}, errors.Wrap(err, "could not generate random password")
 		}
 
-		hook.Configuration.Secret = base64.StdEncoding.EncodeToString(b)
+		hook.Configuration.Secret = secret
 	}
 
 	key, err := c.service.CreateWebhook(ctx, cr.Repo(), hook)

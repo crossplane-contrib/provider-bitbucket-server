@@ -17,11 +17,17 @@ limitations under the License.
 package accesskey
 
 import (
+	"bytes"
 	"context"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
 	"fmt"
 	"strconv"
 
 	"github.com/pkg/errors"
+	"golang.org/x/crypto/ssh"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/workqueue"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -119,7 +125,7 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 		Token:   string(data),
 	})
 
-	return &external{service: svc}, nil
+	return &external{service: svc, keygen: keygen}, nil
 }
 
 // An ExternalClient observes, then either creates, updates, or deletes an
@@ -128,6 +134,7 @@ type external struct {
 	// A 'client' used to connect to the external resource API. In practice this
 	// would be something like an AWS SDK client.
 	service bitbucket.KeyClientAPI
+	keygen  func() (string, []byte, error)
 }
 
 func (c *external) Observe(ctx context.Context, mg resource.Managed) (managed.ExternalObservation, error) {
@@ -154,7 +161,12 @@ func (c *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 		return managed.ExternalObservation{}, errors.Wrap(err, errGetFailed)
 	}
 
-	// TODO: key.Key == cr.Spec.ForProvider.PublicKey.Key ?
+	cr.Status.AtProvider.ID = key.ID
+	cr.Status.AtProvider.Key = &v1alpha1.PublicKey{
+		Key:        key.Key,
+		Label:      key.Label,
+		Permission: key.Permission,
+	}
 
 	return managed.ExternalObservation{
 		// Return false when the external resource does not exist. This lets
@@ -181,8 +193,32 @@ func (c *external) create(ctx context.Context, cr *v1alpha1.AccessKey) error {
 
 	meta.SetExternalName(cr, fmt.Sprint(key.ID))
 	cr.Status.SetConditions(xpv1.Available())
-	//	cr.Status.AtProvider.ID = key.ID TODO do we want this?
+	cr.Status.AtProvider.ID = key.ID
+	cr.Status.AtProvider.Key = &v1alpha1.PublicKey{
+		Key:        key.Key,
+		Label:      key.Label,
+		Permission: key.Permission,
+	}
 	return nil
+}
+
+func keygen() (string, []byte, error) {
+	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		return "", nil, err
+	}
+	privateKeyPEM := &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(privateKey)}
+	var private bytes.Buffer
+	if err := pem.Encode(&private, privateKeyPEM); err != nil {
+		return "", nil, err
+	}
+	// generate public key
+	pub, err := ssh.NewPublicKey(&privateKey.PublicKey)
+	if err != nil {
+		return "", nil, err
+	}
+	public := ssh.MarshalAuthorizedKey(pub)
+	return string(public), private.Bytes(), nil
 }
 
 func (c *external) Create(ctx context.Context, mg resource.Managed) (managed.ExternalCreation, error) {
@@ -192,7 +228,17 @@ func (c *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 	}
 
 	cr.Status.SetConditions(xpv1.Creating())
+	conndetails := managed.ConnectionDetails{}
 
+	if cr.Spec.ForProvider.PublicKey.Key == "" {
+		var err error
+		var privateKey []byte
+		cr.Spec.ForProvider.PublicKey.Key, privateKey, err = c.keygen()
+		if err != nil {
+			return managed.ExternalCreation{}, err
+		}
+		conndetails["ssh-privatekey"] = privateKey
+	}
 	if err := c.create(ctx, cr); err != nil {
 		return managed.ExternalCreation{}, errors.Wrap(err, errCreateFailed)
 	}
@@ -202,7 +248,7 @@ func (c *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 	return managed.ExternalCreation{
 		// Optionally return any details that may be required to connect to the
 		// external resource. These will be stored as the connection secret.
-		ConnectionDetails:    managed.ConnectionDetails{},
+		ConnectionDetails:    conndetails,
 		ExternalNameAssigned: true,
 	}, nil
 }
