@@ -46,11 +46,10 @@ type AccessKeyParameters struct {
 // PublicKey contains the information about the public key. Only the permission field is mutable.
 type PublicKey struct {
 	// Label
-	// +immutable
 	Label string `json:"label"`
 
-	// The ssh-key with access to the git repo.
-	// +immutable
+	// The ssh-key with access to the git repo. Leave empty to get a ssh-privatekey in the connection details
+	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:Pattern=(ssh|ecdsa)-[a-z0-9-]+ .*
 	Key string `json:"key"`
 

@@ -47,6 +47,10 @@ func withPermission(permission string) resourceModifier {
 	return func(r *v1alpha1.AccessKey) { r.Spec.ForProvider.PublicKey.Permission = permission }
 }
 
+func withKey(key string) resourceModifier {
+	return func(r *v1alpha1.AccessKey) { r.Spec.ForProvider.PublicKey.Key = key }
+}
+
 const (
 	namespace = "cool-namespace"
 	key1      = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDKW79iJEhqKPa6ZxeRDTh3i7h6ms4e1ABmHKfZkbyhOeC1ycMQAtteqi42oYFMscMODYqEgjgiOwi75Ol+rint7iZdXzkPDbqzHDOW4XNPzKNiqh2mOQY60n6nk8EiIIs71ff6RryxEYA2x2r3snm257o/vr4OE2F6VMmK4Io8K3TTGqsZKp8SePHnx40s8dusAtZWn7UUFedkLLHCUYAMk8gtSKcTA/ntjNdHTcIxVO5WbkZoCHPLMPc29Vz5MYq096qZ35idgCa3bSK/VSZpsNQUJEwwc04k1G9LA2z+sjD22hg79SZtY4P7knV1vvlXf5uZs+0myK9Qiwvfu3IXFWXYVr6q73VshdyM25N4C7wID4KqZTmHVLM/oQGw8jvWnWbzVwuvv+wVB1h8SBryxJsJwylCsRw8gLzpc/t0TluXQWSk2zWHHeETw83Mm0tT60mcaipCgTkbWYO+IP1OTxwsJzZtdgrrEO/Wwwk7AXRPNhiOAS5XFgZrRpj3HWU= user@example.com"
@@ -290,6 +294,108 @@ func TestUpdate(t *testing.T) {
 				service: tc.r,
 			}
 			o, err := e.Update(context.Background(), tc.args.cr)
+			if diff := cmp.Diff(tc.want.cr, tc.args.cr); diff != "" {
+				t.Errorf("Update(...): -want, +got\n%s", diff)
+			}
+			if diff := cmp.Diff(tc.want.err, err, test.EquateErrors()); diff != "" {
+				t.Errorf("Update(...): -want, +got\n%s", diff)
+			}
+			if diff := cmp.Diff(tc.want.o, o); diff != "" {
+				t.Errorf("Update(...): -want, +got\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestCreate(t *testing.T) {
+	type args struct {
+		cr *v1alpha1.AccessKey
+		r  bitbucket.KeyClientAPI
+	}
+	type want struct {
+		cr  *v1alpha1.AccessKey
+		o   managed.ExternalCreation
+		err error
+	}
+
+	mockKey := "mockKey"
+	mockPrivateKey := []byte(`private key here`)
+	mockKeyGen := func() (string, []byte, error) {
+		return mockKey, mockPrivateKey, nil
+	}
+
+	errorBoom := errors.New("error")
+
+	cases := map[string]struct {
+		args
+		want
+	}{
+		"SuccessfulKeyGen": {
+			args: args{
+				cr: instance(withKey("")),
+				r: &fake.MockKeyClient{
+					MockCreateAccessKey: func(_ context.Context, repo bitbucket.Repo, k bitbucket.AccessKey) (bitbucket.AccessKey, error) {
+						if k.Key != mockKey {
+							t.Errorf("expected generated key, got %+v", k)
+						}
+						k.ID = 2
+						return k, nil
+					},
+				},
+			},
+			want: want{
+				cr: instance(withExternalName(2), withKey(mockKey), withConditions(xpv1.Available())),
+				o: managed.ExternalCreation{
+					ExternalNameAssigned: true,
+					ConnectionDetails: managed.ConnectionDetails{
+						"ssh-privatekey": mockPrivateKey,
+					},
+				},
+			},
+		},
+		"Successful": {
+			args: args{
+				cr: instance(),
+				r: &fake.MockKeyClient{
+					MockCreateAccessKey: func(_ context.Context, repo bitbucket.Repo, k bitbucket.AccessKey) (bitbucket.AccessKey, error) {
+						k.ID = 8
+
+						return k, nil
+					},
+				},
+			},
+			want: want{
+				cr: instance(withExternalName(8), withConditions(xpv1.Available())),
+				o: managed.ExternalCreation{
+					ExternalNameAssigned: true,
+					ConnectionDetails:    managed.ConnectionDetails{},
+				},
+			},
+		},
+		"Failed": {
+			args: args{
+				cr: instance(),
+				r: &fake.MockKeyClient{
+					MockCreateAccessKey: func(_ context.Context, repo bitbucket.Repo, _ bitbucket.AccessKey) (bitbucket.AccessKey, error) {
+						return bitbucket.AccessKey{}, errorBoom
+					},
+				},
+			},
+			want: want{
+				cr:  instance(withConditions(xpv1.Creating())),
+				o:   managed.ExternalCreation{},
+				err: errors.Wrap(errorBoom, errCreateFailed),
+			},
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			e := external{
+				service: tc.r,
+				keygen:  mockKeyGen,
+			}
+			o, err := e.Create(context.Background(), tc.args.cr)
 			if diff := cmp.Diff(tc.want.cr, tc.args.cr); diff != "" {
 				t.Errorf("Update(...): -want, +got\n%s", diff)
 			}

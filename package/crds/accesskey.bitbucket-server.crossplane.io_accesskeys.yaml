@@ -61,7 +61,7 @@ spec:
                     description: PublicKey contains the information about the public key. Only the permission field is mutable.
                     properties:
                       key:
-                        description: The ssh-key with access to the git repo.
+                        description: The ssh-key with access to the git repo. Leave empty to get a ssh-privatekey in the connection details
                         pattern: (ssh|ecdsa)-[a-z0-9-]+ .*
                         type: string
                       label:
@@ -73,7 +73,6 @@ spec:
                         - REPO_WRITE
                         type: string
                     required:
-                    - key
                     - label
                     - permission
                     type: object
