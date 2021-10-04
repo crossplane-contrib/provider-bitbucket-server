@@ -150,7 +150,7 @@ func (c *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 	externalName := meta.GetExternalName(cr)
 	id, err := strconv.Atoi(externalName)
 	if err != nil {
-		return managed.ExternalObservation{}, nil // not exists
+		return managed.ExternalObservation{}, nil // nolint // This is ok as it does not exists
 	}
 
 	hook, err := c.service.GetWebhook(ctx, cr.Repo(), id)

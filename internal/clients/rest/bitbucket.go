@@ -48,7 +48,10 @@ type errorResponse struct {
 func (e errorResponse) Error() string {
 	if len(e.Errors) > 0 {
 		var buf bytes.Buffer
-		json.NewEncoder(&buf).Encode(e)
+		err := json.NewEncoder(&buf).Encode(e)
+		if err != nil {
+			return fmt.Sprintf("printing as json failed: %v", err)
+		}
 		return fmt.Sprintf("%v %v", e.code, buf.String())
 	}
 	return fmt.Sprintf("HTTP status %v", e.code)
@@ -78,7 +81,7 @@ func (c *Client) sendRequest(req *http.Request, v interface{}) error {
 	if err != nil {
 		return err
 	}
-	defer res.Body.Close()
+	defer res.Body.Close() // nolint
 
 	// fmt.Printf("%v %v -> %v\n", req.Method, req.URL.String(), res.StatusCode)
 	if res.StatusCode < http.StatusOK || res.StatusCode >= http.StatusBadRequest {
