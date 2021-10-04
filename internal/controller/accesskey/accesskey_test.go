@@ -24,13 +24,13 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 
+	"github.com/crossplane-contrib/provider-bitbucket-server/apis/accesskey/v1alpha1"
+	"github.com/crossplane-contrib/provider-bitbucket-server/internal/clients/bitbucket"
+	"github.com/crossplane-contrib/provider-bitbucket-server/internal/clients/bitbucket/fake"
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/meta"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/test"
-	"github.com/crossplane-contrib/provider-bitbucket-server/apis/accesskey/v1alpha1"
-	"github.com/crossplane-contrib/provider-bitbucket-server/internal/clients/bitbucket"
-	"github.com/crossplane-contrib/provider-bitbucket-server/internal/clients/bitbucket/fake"
 )
 
 type resourceModifier func(*v1alpha1.AccessKey)
@@ -41,6 +41,10 @@ func withConditions(c ...xpv1.Condition) resourceModifier {
 
 func withExternalName(id int) resourceModifier {
 	return func(r *v1alpha1.AccessKey) { meta.SetExternalName(r, fmt.Sprint(id)) }
+}
+
+func withObservation(observation v1alpha1.AccessKeyObservation) resourceModifier {
+	return func(r *v1alpha1.AccessKey) { r.Status.AtProvider = observation }
 }
 
 func withPermission(permission string) resourceModifier {
@@ -123,7 +127,14 @@ func TestObserve(t *testing.T) {
 				},
 			},
 			want: want{
-				cr: instance(withExternalName(99)),
+				cr: instance(withExternalName(99), withObservation(v1alpha1.AccessKeyObservation{
+					ID: 99,
+					Key: &v1alpha1.PublicKey{
+						Label:      label,
+						Key:        key1,
+						Permission: bitbucket.PermissionRepoRead,
+					},
+				})),
 				o: managed.ExternalObservation{
 					ResourceExists:    true,
 					ResourceUpToDate:  true,
@@ -149,7 +160,14 @@ func TestObserve(t *testing.T) {
 				},
 			},
 			want: want{
-				cr: instance(withExternalName(99)),
+				cr: instance(withExternalName(99), withObservation(v1alpha1.AccessKeyObservation{
+					ID: 99,
+					Key: &v1alpha1.PublicKey{
+						Label:      label,
+						Key:        key1,
+						Permission: bitbucket.PermissionRepoWrite,
+					},
+				})),
 				o: managed.ExternalObservation{
 					ResourceExists:    true,
 					ResourceUpToDate:  false,
@@ -344,7 +362,14 @@ func TestCreate(t *testing.T) {
 				},
 			},
 			want: want{
-				cr: instance(withExternalName(2), withKey(mockKey), withConditions(xpv1.Available())),
+				cr: instance(withExternalName(2), withKey(mockKey), withConditions(xpv1.Available()), withObservation(v1alpha1.AccessKeyObservation{
+					ID: 2,
+					Key: &v1alpha1.PublicKey{
+						Label:      label,
+						Key:        mockKey,
+						Permission: bitbucket.PermissionRepoRead,
+					},
+				})),
 				o: managed.ExternalCreation{
 					ExternalNameAssigned: true,
 					ConnectionDetails: managed.ConnectionDetails{
@@ -365,7 +390,14 @@ func TestCreate(t *testing.T) {
 				},
 			},
 			want: want{
-				cr: instance(withExternalName(8), withConditions(xpv1.Available())),
+				cr: instance(withExternalName(8), withConditions(xpv1.Available()), withObservation(v1alpha1.AccessKeyObservation{
+					ID: 8,
+					Key: &v1alpha1.PublicKey{
+						Label:      label,
+						Key:        key1,
+						Permission: bitbucket.PermissionRepoRead,
+					},
+				})),
 				o: managed.ExternalCreation{
 					ExternalNameAssigned: true,
 					ConnectionDetails:    managed.ConnectionDetails{},
