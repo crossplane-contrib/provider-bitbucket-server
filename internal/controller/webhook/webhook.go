@@ -53,8 +53,6 @@ const (
 	errGetPC        = "cannot get ProviderConfig"
 	errGetCreds     = "cannot get credentials"
 
-	errNewClient = "cannot create new Service"
-
 	errGetFailed    = "cannot get webhook from bitbucket API"
 	errDeleteFailed = "cannot delete webhook from bitbucket API"
 	errCreateFailed = "cannot create webhook with bitbucket API"

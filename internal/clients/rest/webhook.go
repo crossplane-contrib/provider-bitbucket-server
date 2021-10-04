@@ -27,6 +27,7 @@ import (
 	"github.com/crossplane-contrib/provider-bitbucket-server/internal/clients/bitbucket"
 )
 
+// GetWebhook gets the web hook
 func (c *Client) GetWebhook(ctx context.Context, repo bitbucket.Repo, id int) (bitbucket.Webhook, error) {
 	url := c.BaseURL + fmt.Sprintf("/rest/api/1.0/projects/%s/repos/%s/webhooks/%d",
 		url.PathEscape(repo.ProjectKey), url.PathEscape(repo.Repo), id)
@@ -44,6 +45,7 @@ func (c *Client) GetWebhook(ctx context.Context, repo bitbucket.Repo, id int) (b
 	return payload, nil
 }
 
+// CreateWebhook creates the web hook
 func (c *Client) CreateWebhook(ctx context.Context, repo bitbucket.Repo, hook bitbucket.Webhook) (bitbucket.Webhook, error) {
 	marshalledPayload, err := json.Marshal(hook)
 	if err != nil {
@@ -65,6 +67,7 @@ func (c *Client) CreateWebhook(ctx context.Context, repo bitbucket.Repo, hook bi
 	return response, nil
 }
 
+// UpdateWebhook updates the web hook
 func (c *Client) UpdateWebhook(ctx context.Context, repo bitbucket.Repo, id int, hook bitbucket.Webhook) (bitbucket.Webhook, error) {
 	marshalledPayload, err := json.Marshal(hook)
 	if err != nil {
@@ -86,6 +89,7 @@ func (c *Client) UpdateWebhook(ctx context.Context, repo bitbucket.Repo, id int,
 	return response, nil
 }
 
+// DeleteWebhook deletes the web hook
 func (c *Client) DeleteWebhook(ctx context.Context, repo bitbucket.Repo, id int) error {
 	url := c.BaseURL + fmt.Sprintf("/rest/api/1.0/projects/%s/repos/%s/webhooks/%d",
 		url.PathEscape(repo.ProjectKey), url.PathEscape(repo.Repo), id)

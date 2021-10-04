@@ -19,8 +19,8 @@ package v1alpha1
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane-contrib/provider-bitbucket-server/internal/clients/bitbucket"
+	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 )
 
 // AccessKeyParameters are the configurable fields of a AccessKey.
@@ -94,6 +94,8 @@ type AccessKey struct {
 	Status AccessKeyStatus `json:"status,omitempty"`
 }
 
+// Repo defines the bitbucket server api
+// TODO: Move
 func (a AccessKey) Repo() bitbucket.Repo {
 	return bitbucket.Repo{
 		ProjectKey: a.Spec.ForProvider.ProjectKey,
@@ -101,6 +103,8 @@ func (a AccessKey) Repo() bitbucket.Repo {
 	}
 }
 
+// AccessKey defined the bitbucket server api
+// TODO: move
 func (a AccessKey) AccessKey() bitbucket.AccessKey {
 	return bitbucket.AccessKey{
 		Key:        a.Spec.ForProvider.PublicKey.Key,

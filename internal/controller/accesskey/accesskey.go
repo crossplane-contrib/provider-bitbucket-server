@@ -54,8 +54,6 @@ const (
 	errGetPC        = "cannot get ProviderConfig"
 	errGetCreds     = "cannot get credentials"
 
-	errNewClient = "cannot create new Service"
-
 	errGetFailed    = "cannot get access key from bitbucket API"
 	errDeleteFailed = "cannot delete access key from bitbucket API"
 	errCreateFailed = "cannot create access key with bitbucket API"

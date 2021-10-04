@@ -28,6 +28,7 @@ import (
 	"github.com/crossplane-contrib/provider-bitbucket-server/internal/clients/bitbucket"
 )
 
+// Client defines the API client
 type Client struct {
 	BaseURL    string
 	HTTPClient *http.Client
@@ -53,6 +54,7 @@ func (e errorResponse) Error() string {
 	return fmt.Sprintf("HTTP status %v", e.code)
 }
 
+// IsNotFound is a 404 error
 func IsNotFound(err error) bool {
 	var errResp errorResponse
 	if errors.As(err, &errResp) {
@@ -62,6 +64,7 @@ func IsNotFound(err error) bool {
 	return false
 }
 
+// NotFoundError is 404
 func NotFoundError() error {
 	return errorResponse{code: http.StatusNotFound}
 }
@@ -105,6 +108,7 @@ func (c *Client) sendRequest(req *http.Request, v interface{}) error {
 	return nil
 }
 
+// Pagination defines response pagination
 type Pagination struct {
 	Size       int  `json:"size"`
 	Limit      int  `json:"limit"`

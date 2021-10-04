@@ -38,10 +38,12 @@ func NewClient(c Config) *rest.Client {
 	}
 }
 
+// NewWebhookClient creates a new client for the webhook api
 func NewWebhookClient(c Config) bitbucket.WebhookClientAPI {
 	return NewClient(c)
 }
 
+// NewAccessKeyClient creates a new client for the access key api
 func NewAccessKeyClient(c Config) bitbucket.KeyClientAPI {
 	return NewClient(c)
 }

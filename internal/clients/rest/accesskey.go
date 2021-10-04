@@ -27,6 +27,7 @@ import (
 	"github.com/crossplane-contrib/provider-bitbucket-server/internal/clients/bitbucket"
 )
 
+// ListAccessKeys returns all access keys for the given repository
 func (c *Client) ListAccessKeys(ctx context.Context, repo bitbucket.Repo) ([]bitbucket.AccessKey, error) {
 	url := c.BaseURL + fmt.Sprintf("/rest/keys/1.0/projects/%s/repos/%s/ssh",
 		url.PathEscape(repo.ProjectKey), url.PathEscape(repo.Repo))
@@ -40,7 +41,7 @@ func (c *Client) ListAccessKeys(ctx context.Context, repo bitbucket.Repo) ([]bit
 		return nil, fmt.Errorf("ListAccessKeys(%+v): %w", repo, err)
 	}
 
-	var ret []bitbucket.AccessKey
+	ret := make([]bitbucket.AccessKey, 0, len(payload.Values))
 	for _, key := range payload.Values {
 		ret = append(ret, bitbucket.AccessKey{
 			Key:        key.Key.Text,
@@ -53,6 +54,7 @@ func (c *Client) ListAccessKeys(ctx context.Context, repo bitbucket.Repo) ([]bit
 	return ret, nil
 }
 
+// GetAccessKey finds accesskey given by bitbucket server access key id
 func (c *Client) GetAccessKey(ctx context.Context, repo bitbucket.Repo, id int) (bitbucket.AccessKey, error) {
 	url := c.BaseURL + fmt.Sprintf("/rest/keys/1.0/projects/%s/repos/%s/ssh/%d",
 		url.PathEscape(repo.ProjectKey), url.PathEscape(repo.Repo), id)
@@ -75,6 +77,7 @@ func (c *Client) GetAccessKey(ctx context.Context, repo bitbucket.Repo, id int) 
 	}, nil
 }
 
+// CreateAccessKey on a repository by providing the public key
 func (c *Client) CreateAccessKey(ctx context.Context, repo bitbucket.Repo, key bitbucket.AccessKey) (bitbucket.AccessKey, error) {
 	payload := UploadKeyPayload{
 		Key: PublicSSHKey{
@@ -109,6 +112,8 @@ func (c *Client) CreateAccessKey(ctx context.Context, repo bitbucket.Repo, key b
 	}, nil
 }
 
+// UpdateAccessKeyPermission enables mutation of permissions on a accesskey by providing the id of the access key.
+// Valid options are REPO_READ or REPO_WRITE
 func (c *Client) UpdateAccessKeyPermission(ctx context.Context, repo bitbucket.Repo, id int, permission string) error {
 	url := c.BaseURL + fmt.Sprintf("/rest/keys/1.0/projects/%s/repos/%s/ssh/%d/permission/%s",
 		url.PathEscape(repo.ProjectKey), url.PathEscape(repo.Repo), id, permission)
@@ -120,6 +125,7 @@ func (c *Client) UpdateAccessKeyPermission(ctx context.Context, repo bitbucket.R
 	return c.sendRequest(req, nil)
 }
 
+// DeleteAccessKey removes the key from the repository by provided access key id
 func (c *Client) DeleteAccessKey(ctx context.Context, repo bitbucket.Repo, id int) error {
 	url := c.BaseURL + fmt.Sprintf("/rest/keys/1.0/projects/%s/repos/%s/ssh/%d",
 		url.PathEscape(repo.ProjectKey), url.PathEscape(repo.Repo), id)
@@ -131,39 +137,55 @@ func (c *Client) DeleteAccessKey(ctx context.Context, repo bitbucket.Repo, id in
 	return c.sendRequest(req, nil)
 }
 
+// PublicSSHKey represents the public ssh key
 type PublicSSHKey struct {
-	Text  string `json:"text"`
+	// Text contains the public key
+	Text string `json:"text"`
+	// Labels describes the public key
 	Label string `json:"label"`
 }
 
+// UploadKeyPayload defines api object for key upload
 type UploadKeyPayload struct {
-	Key        PublicSSHKey `json:"key"`
-	Permission string       `json:"permission"`
+	// Key defines the type of public ssh key
+	Key PublicSSHKey `json:"key"`
+	// Permissions defines the access level for the access key in bitbucket server
+	Permission string `json:"permission"`
 }
 
+// GetKeysPayload is the returned object from bitbucket server
 type GetKeysPayload struct {
+	// Pagination is defined by the bitbucket server api
 	Pagination `json:",inline"`
-	Values     []KeyDescription `json:"values"`
+	// Values is defined by the bitbucket server api
+	Values []KeyDescription `json:"values"`
 }
 
+// KeyDescription describes a specific accesskey in bitbucket server
 type KeyDescription struct {
-	Key        KeyInfo        `json:"key"`
+	// Key contains info about the access key
+	Key KeyInfo `json:"key"`
+	// Repository contains information about the repository where the access key is added
 	Repository RepositoryInfo `json:"repository"`
-	Permission string         `json:"permission"`
+	// Permission is the level of permission the access key has been granted
+	Permission string `json:"permission"`
 }
 
+// KeyInfo contains the information about the access key
 type KeyInfo struct {
 	ID    int    `json:"id"`
 	Text  string `json:"text"`
 	Label string `json:"label"`
 }
 
+// RepositoryInfo contains information about the repository
 type RepositoryInfo struct {
 	Name    string `json:"name"`
-	Id      int    `json:"id"`
+	ID      int    `json:"id"`
 	Project ProjectInfo
 }
 
+// ProjectInfo contains information on the project
 type ProjectInfo struct {
 	Key string `json:"key"`
 }

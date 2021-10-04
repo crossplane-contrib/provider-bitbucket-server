@@ -19,8 +19,8 @@ package v1alpha1
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane-contrib/provider-bitbucket-server/internal/clients/bitbucket"
+	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 )
 
 /*
@@ -45,6 +45,8 @@ type WebhookParameters struct {
 	Webhook BitbucketWebhook `json:"webhook"`
 }
 
+// BitbucketWebhook provide a way to configure Bitbucket Server to make requests
+// to your server (or another external service) whenever certain events occur in Bitbucket
 type BitbucketWebhook struct {
 	Name string `json:"name"`
 
@@ -59,9 +61,11 @@ type BitbucketWebhook struct {
 
 // TODO: Look up all options
 
+// Event describes a bitbucket server event type
 // +kubebuilder:validation:Enum="repo:refs_changed";"repo:modified"
 type Event string
 
+// BitbucketWebhookConfiguration configures settings for a webhook configuration
 type BitbucketWebhookConfiguration struct {
 	// Webhook secret. Leave empty to get a secret in the connection details
 	// +kubebuilder:validation:Optional
@@ -105,6 +109,8 @@ type Webhook struct {
 	Status WebhookStatus `json:"status,omitempty"`
 }
 
+// Repo returns current repository for webhook
+// TODO: Move
 func (a Webhook) Repo() bitbucket.Repo {
 	return bitbucket.Repo{
 		ProjectKey: a.Spec.ForProvider.ProjectKey,
@@ -112,8 +118,10 @@ func (a Webhook) Repo() bitbucket.Repo {
 	}
 }
 
+// Webhook returns the bitbucket rest client of the object
+// TODO: Move
 func (a Webhook) Webhook() bitbucket.Webhook {
-	var events []string
+	events := make([]string, 0, len(a.Spec.ForProvider.Webhook.Events))
 	for _, ev := range a.Spec.ForProvider.Webhook.Events {
 		events = append(events, string(ev))
 	}
