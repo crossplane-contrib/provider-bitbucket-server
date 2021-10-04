@@ -20,9 +20,9 @@ package apis
 import (
 	"k8s.io/apimachinery/pkg/runtime"
 
-	accesskeyv1alpha1 "github.com/crossplane/provider-bitbucket-server/apis/accesskey/v1alpha1"
-	bitbucketv1alpha1 "github.com/crossplane/provider-bitbucket-server/apis/v1alpha1"
-	webhookv1alpha1 "github.com/crossplane/provider-bitbucket-server/apis/webhook/v1alpha1"
+	accesskeyv1alpha1 "github.com/crossplane-contrib/provider-bitbucket-server/apis/accesskey/v1alpha1"
+	bitbucketv1alpha1 "github.com/crossplane-contrib/provider-bitbucket-server/apis/v1alpha1"
+	webhookv1alpha1 "github.com/crossplane-contrib/provider-bitbucket-server/apis/webhook/v1alpha1"
 )
 
 func init() {

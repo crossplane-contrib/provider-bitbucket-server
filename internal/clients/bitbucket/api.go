@@ -21,6 +21,7 @@ import (
 	"errors"
 )
 
+// Repo struct
 type Repo struct {
 	ProjectKey string
 	Repo       string
@@ -35,31 +36,46 @@ type KeyClientAPI interface {
 	UpdateAccessKeyPermission(ctx context.Context, repo Repo, id int, permission string) (err error)
 }
 
+// ErrNotFound returned when item is not found
 var ErrNotFound = errors.New("not found")
 
 const (
+	// PermissionRepoWrite grants read write permissions to the repository
 	PermissionRepoWrite = "REPO_WRITE"
-	PermissionRepoRead  = "REPO_READ"
+	// PermissionRepoRead grants read only permissions to the repository
+	PermissionRepoRead = "REPO_READ"
 )
 
+// AccessKey defines the api object for bitbucket server
 type AccessKey struct {
-	Key        string
-	Label      string
-	ID         int
+	// Key is the public ssh key
+	Key string
+	// Label is the text description of the key
+	Label string
+	// ID is the number the access key is given by server
+	ID int
+	// Permission is either PermissionRepoRead or PermissionRepoWrite
 	Permission string
 }
 
+// Webhook defines the api object for the bitbucket server objet webhook
 type Webhook struct {
+	// ID of the webhook in the server
 	ID int `json:"id"`
 
+	// Name of the webhook
 	Name string `json:"name"`
 
+	// Configuration contains webhook configurations
 	Configuration struct {
+		// Secret defines the authentication key that the bitbucket server HMAC signes the payload
 		Secret string `json:"secret"`
 	} `json:"configuration"`
 
+	// Events defines for which events the webhook subscribes
 	Events []string `json:"events"`
 
+	// URL is the enpoint that bitbucket server should POST events to
 	URL string `json:"url"`
 
 	// active bool

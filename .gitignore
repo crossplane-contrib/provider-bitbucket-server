@@ -1,5 +1,16 @@
 /bin
 /vendor
+
+/.cache
+/.work
+/_output
+cover.out
 /.vendor-new
-.vscode
+
+# asdf loca go version
+.tool-versions
+
+# ignore IDE folders
+.vscode/
+.idea/
 

@@ -41,10 +41,10 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
-	apisv1alpha1 "github.com/crossplane/provider-bitbucket-server/apis/v1alpha1"
-	"github.com/crossplane/provider-bitbucket-server/apis/webhook/v1alpha1"
-	"github.com/crossplane/provider-bitbucket-server/internal/clients"
-	"github.com/crossplane/provider-bitbucket-server/internal/clients/bitbucket"
+	apisv1alpha1 "github.com/crossplane-contrib/provider-bitbucket-server/apis/v1alpha1"
+	"github.com/crossplane-contrib/provider-bitbucket-server/apis/webhook/v1alpha1"
+	"github.com/crossplane-contrib/provider-bitbucket-server/internal/clients"
+	"github.com/crossplane-contrib/provider-bitbucket-server/internal/clients/bitbucket"
 )
 
 const (
@@ -52,8 +52,6 @@ const (
 	errTrackPCUsage = "cannot track ProviderConfig usage"
 	errGetPC        = "cannot get ProviderConfig"
 	errGetCreds     = "cannot get credentials"
-
-	errNewClient = "cannot create new Service"
 
 	errGetFailed    = "cannot get webhook from bitbucket API"
 	errDeleteFailed = "cannot delete webhook from bitbucket API"
@@ -152,7 +150,7 @@ func (c *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 	externalName := meta.GetExternalName(cr)
 	id, err := strconv.Atoi(externalName)
 	if err != nil {
-		return managed.ExternalObservation{}, nil // not exists
+		return managed.ExternalObservation{}, nil // nolint // This is ok as it does not exists
 	}
 
 	hook, err := c.service.GetWebhook(ctx, cr.Repo(), id)

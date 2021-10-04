@@ -24,13 +24,13 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 
+	"github.com/crossplane-contrib/provider-bitbucket-server/apis/accesskey/v1alpha1"
+	"github.com/crossplane-contrib/provider-bitbucket-server/internal/clients/bitbucket"
+	"github.com/crossplane-contrib/provider-bitbucket-server/internal/clients/bitbucket/fake"
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/meta"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/test"
-	"github.com/crossplane/provider-bitbucket-server/apis/accesskey/v1alpha1"
-	"github.com/crossplane/provider-bitbucket-server/internal/clients/bitbucket"
-	"github.com/crossplane/provider-bitbucket-server/internal/clients/bitbucket/fake"
 )
 
 type resourceModifier func(*v1alpha1.AccessKey)
@@ -41,6 +41,10 @@ func withConditions(c ...xpv1.Condition) resourceModifier {
 
 func withExternalName(id int) resourceModifier {
 	return func(r *v1alpha1.AccessKey) { meta.SetExternalName(r, fmt.Sprint(id)) }
+}
+
+func withObservation(observation v1alpha1.AccessKeyObservation) resourceModifier {
+	return func(r *v1alpha1.AccessKey) { r.Status.AtProvider = observation }
 }
 
 func withPermission(permission string) resourceModifier {
@@ -54,8 +58,8 @@ func withKey(key string) resourceModifier {
 const (
 	namespace = "cool-namespace"
 	key1      = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDKW79iJEhqKPa6ZxeRDTh3i7h6ms4e1ABmHKfZkbyhOeC1ycMQAtteqi42oYFMscMODYqEgjgiOwi75Ol+rint7iZdXzkPDbqzHDOW4XNPzKNiqh2mOQY60n6nk8EiIIs71ff6RryxEYA2x2r3snm257o/vr4OE2F6VMmK4Io8K3TTGqsZKp8SePHnx40s8dusAtZWn7UUFedkLLHCUYAMk8gtSKcTA/ntjNdHTcIxVO5WbkZoCHPLMPc29Vz5MYq096qZ35idgCa3bSK/VSZpsNQUJEwwc04k1G9LA2z+sjD22hg79SZtY4P7knV1vvlXf5uZs+0myK9Qiwvfu3IXFWXYVr6q73VshdyM25N4C7wID4KqZTmHVLM/oQGw8jvWnWbzVwuvv+wVB1h8SBryxJsJwylCsRw8gLzpc/t0TluXQWSk2zWHHeETw83Mm0tT60mcaipCgTkbWYO+IP1OTxwsJzZtdgrrEO/Wwwk7AXRPNhiOAS5XFgZrRpj3HWU= user@example.com"
-	key2      = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCpBjjwXykLFApECNzgHUOX+EhgFuFWUE/o4AQItHvuZUxqcp/ajxNXzK8Av2OyrWfJ9qvHYCpC/bOLSJfEOw5yF816t/m86TAQArEB7BhQj2mfVvFHtpg9n5f1STxu3hzWKrM0r3/R/9G/8YwFp2+6PvIvrpxmtkWuO1TEhuqRAVwdHmZ/l+8bsuQrXpaQhZ0gTTMFOMPgqkiZ5tBz4n0ocZdSI3LpsG2QuA4QYCxECcIZLzvMzqmV69+ReGJXHhX+yHwOdmtt+dvb5en0nLzbaQlYB37tGBfiaM31qXgiTd5h8tLWlgjLvnfUEOD03J887tl8OBjHLG+pa1CgBwrtKuqJirUdUhelRAfy/zkhMfFzOrPLRYu2VcKPhGV+oI8tog/ydwX62ouSN+yIxICkGf31gDVisIHILJXP2qfv8Vm7gWETfTkh9Nyrx/NbJwTuP0p2SIs94Oywwl8UpT4ytlW+BHhS6L4gUNErZKpFBnjkmCoc+h1IilJfTHmLsSc= user@example.com"
-	label     = "user@example.com"
+	// key2      = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCpBjjwXykLFApECNzgHUOX+EhgFuFWUE/o4AQItHvuZUxqcp/ajxNXzK8Av2OyrWfJ9qvHYCpC/bOLSJfEOw5yF816t/m86TAQArEB7BhQj2mfVvFHtpg9n5f1STxu3hzWKrM0r3/R/9G/8YwFp2+6PvIvrpxmtkWuO1TEhuqRAVwdHmZ/l+8bsuQrXpaQhZ0gTTMFOMPgqkiZ5tBz4n0ocZdSI3LpsG2QuA4QYCxECcIZLzvMzqmV69+ReGJXHhX+yHwOdmtt+dvb5en0nLzbaQlYB37tGBfiaM31qXgiTd5h8tLWlgjLvnfUEOD03J887tl8OBjHLG+pa1CgBwrtKuqJirUdUhelRAfy/zkhMfFzOrPLRYu2VcKPhGV+oI8tog/ydwX62ouSN+yIxICkGf31gDVisIHILJXP2qfv8Vm7gWETfTkh9Nyrx/NbJwTuP0p2SIs94Oywwl8UpT4ytlW+BHhS6L4gUNErZKpFBnjkmCoc+h1IilJfTHmLsSc= user@example.com"
+	label = "user@example.com"
 
 	connectionSecretName = "cool-connection-secret"
 )
@@ -123,7 +127,14 @@ func TestObserve(t *testing.T) {
 				},
 			},
 			want: want{
-				cr: instance(withExternalName(99)),
+				cr: instance(withExternalName(99), withObservation(v1alpha1.AccessKeyObservation{
+					ID: 99,
+					Key: &v1alpha1.PublicKey{
+						Label:      label,
+						Key:        key1,
+						Permission: bitbucket.PermissionRepoRead,
+					},
+				})),
 				o: managed.ExternalObservation{
 					ResourceExists:    true,
 					ResourceUpToDate:  true,
@@ -149,7 +160,14 @@ func TestObserve(t *testing.T) {
 				},
 			},
 			want: want{
-				cr: instance(withExternalName(99)),
+				cr: instance(withExternalName(99), withObservation(v1alpha1.AccessKeyObservation{
+					ID: 99,
+					Key: &v1alpha1.PublicKey{
+						Label:      label,
+						Key:        key1,
+						Permission: bitbucket.PermissionRepoWrite,
+					},
+				})),
 				o: managed.ExternalObservation{
 					ResourceExists:    true,
 					ResourceUpToDate:  false,
@@ -344,7 +362,14 @@ func TestCreate(t *testing.T) {
 				},
 			},
 			want: want{
-				cr: instance(withExternalName(2), withKey(mockKey), withConditions(xpv1.Available())),
+				cr: instance(withExternalName(2), withKey(mockKey), withConditions(xpv1.Available()), withObservation(v1alpha1.AccessKeyObservation{
+					ID: 2,
+					Key: &v1alpha1.PublicKey{
+						Label:      label,
+						Key:        mockKey,
+						Permission: bitbucket.PermissionRepoRead,
+					},
+				})),
 				o: managed.ExternalCreation{
 					ExternalNameAssigned: true,
 					ConnectionDetails: managed.ConnectionDetails{
@@ -365,7 +390,14 @@ func TestCreate(t *testing.T) {
 				},
 			},
 			want: want{
-				cr: instance(withExternalName(8), withConditions(xpv1.Available())),
+				cr: instance(withExternalName(8), withConditions(xpv1.Available()), withObservation(v1alpha1.AccessKeyObservation{
+					ID: 8,
+					Key: &v1alpha1.PublicKey{
+						Label:      label,
+						Key:        key1,
+						Permission: bitbucket.PermissionRepoRead,
+					},
+				})),
 				o: managed.ExternalCreation{
 					ExternalNameAssigned: true,
 					ConnectionDetails:    managed.ConnectionDetails{},

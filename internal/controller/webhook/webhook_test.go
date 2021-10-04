@@ -24,14 +24,14 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 
+	"github.com/crossplane-contrib/provider-bitbucket-server/apis/webhook/v1alpha1"
+	"github.com/crossplane-contrib/provider-bitbucket-server/internal/clients/bitbucket"
+	"github.com/crossplane-contrib/provider-bitbucket-server/internal/clients/bitbucket/fake"
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/crossplane/crossplane-runtime/pkg/meta"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/test"
-	"github.com/crossplane/provider-bitbucket-server/apis/webhook/v1alpha1"
-	"github.com/crossplane/provider-bitbucket-server/internal/clients/bitbucket"
-	"github.com/crossplane/provider-bitbucket-server/internal/clients/bitbucket/fake"
 )
 
 type resourceModifier func(*v1alpha1.Webhook)

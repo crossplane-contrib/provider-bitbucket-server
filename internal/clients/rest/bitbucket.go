@@ -25,9 +25,10 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/crossplane/provider-bitbucket-server/internal/clients/bitbucket"
+	"github.com/crossplane-contrib/provider-bitbucket-server/internal/clients/bitbucket"
 )
 
+// Client defines the API client
 type Client struct {
 	BaseURL    string
 	HTTPClient *http.Client
@@ -47,12 +48,16 @@ type errorResponse struct {
 func (e errorResponse) Error() string {
 	if len(e.Errors) > 0 {
 		var buf bytes.Buffer
-		json.NewEncoder(&buf).Encode(e)
+		err := json.NewEncoder(&buf).Encode(e)
+		if err != nil {
+			return fmt.Sprintf("printing as json failed: %v", err)
+		}
 		return fmt.Sprintf("%v %v", e.code, buf.String())
 	}
 	return fmt.Sprintf("HTTP status %v", e.code)
 }
 
+// IsNotFound is a 404 error
 func IsNotFound(err error) bool {
 	var errResp errorResponse
 	if errors.As(err, &errResp) {
@@ -62,6 +67,7 @@ func IsNotFound(err error) bool {
 	return false
 }
 
+// NotFoundError is 404
 func NotFoundError() error {
 	return errorResponse{code: http.StatusNotFound}
 }
@@ -75,7 +81,7 @@ func (c *Client) sendRequest(req *http.Request, v interface{}) error {
 	if err != nil {
 		return err
 	}
-	defer res.Body.Close()
+	defer res.Body.Close() // nolint
 
 	// fmt.Printf("%v %v -> %v\n", req.Method, req.URL.String(), res.StatusCode)
 	if res.StatusCode < http.StatusOK || res.StatusCode >= http.StatusBadRequest {
@@ -105,6 +111,7 @@ func (c *Client) sendRequest(req *http.Request, v interface{}) error {
 	return nil
 }
 
+// Pagination defines response pagination
 type Pagination struct {
 	Size       int  `json:"size"`
 	Limit      int  `json:"limit"`

@@ -1,4 +1,4 @@
-module github.com/crossplane/provider-bitbucket-server
+module github.com/crossplane-contrib/provider-bitbucket-server
 
 go 1.13
 
