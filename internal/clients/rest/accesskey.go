@@ -24,7 +24,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/crossplane/provider-bitbucket-server/internal/clients/bitbucket"
+	"github.com/crossplane-contrib/provider-bitbucket-server/internal/clients/bitbucket"
 )
 
 func (c *Client) ListAccessKeys(ctx context.Context, repo bitbucket.Repo) ([]bitbucket.AccessKey, error) {

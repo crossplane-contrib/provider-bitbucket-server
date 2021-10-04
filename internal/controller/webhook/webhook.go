@@ -41,10 +41,10 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
-	apisv1alpha1 "github.com/crossplane/provider-bitbucket-server/apis/v1alpha1"
-	"github.com/crossplane/provider-bitbucket-server/apis/webhook/v1alpha1"
-	"github.com/crossplane/provider-bitbucket-server/internal/clients"
-	"github.com/crossplane/provider-bitbucket-server/internal/clients/bitbucket"
+	apisv1alpha1 "github.com/crossplane-contrib/provider-bitbucket-server/apis/v1alpha1"
+	"github.com/crossplane-contrib/provider-bitbucket-server/apis/webhook/v1alpha1"
+	"github.com/crossplane-contrib/provider-bitbucket-server/internal/clients"
+	"github.com/crossplane-contrib/provider-bitbucket-server/internal/clients/bitbucket"
 )
 
 const (

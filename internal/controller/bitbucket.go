@@ -22,9 +22,9 @@ import (
 
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 
-	"github.com/crossplane/provider-bitbucket-server/internal/controller/accesskey"
-	"github.com/crossplane/provider-bitbucket-server/internal/controller/config"
-	"github.com/crossplane/provider-bitbucket-server/internal/controller/webhook"
+	"github.com/crossplane-contrib/provider-bitbucket-server/internal/controller/accesskey"
+	"github.com/crossplane-contrib/provider-bitbucket-server/internal/controller/config"
+	"github.com/crossplane-contrib/provider-bitbucket-server/internal/controller/webhook"
 )
 
 // Setup creates all Bitbucket Server controllers with the supplied

@@ -19,7 +19,7 @@ package fake
 import (
 	"context"
 
-	"github.com/crossplane/provider-bitbucket-server/internal/clients/bitbucket"
+	"github.com/crossplane-contrib/provider-bitbucket-server/internal/clients/bitbucket"
 )
 
 var _ bitbucket.KeyClientAPI = &MockKeyClient{}

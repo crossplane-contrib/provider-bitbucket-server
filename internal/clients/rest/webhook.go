@@ -24,7 +24,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/crossplane/provider-bitbucket-server/internal/clients/bitbucket"
+	"github.com/crossplane-contrib/provider-bitbucket-server/internal/clients/bitbucket"
 )
 
 func (c *Client) GetWebhook(ctx context.Context, repo bitbucket.Repo, id int) (bitbucket.Webhook, error) {

@@ -19,8 +19,8 @@ package clients
 import (
 	"net/http"
 
-	"github.com/crossplane/provider-bitbucket-server/internal/clients/bitbucket"
-	"github.com/crossplane/provider-bitbucket-server/internal/clients/rest"
+	"github.com/crossplane-contrib/provider-bitbucket-server/internal/clients/bitbucket"
+	"github.com/crossplane-contrib/provider-bitbucket-server/internal/clients/rest"
 )
 
 // Config provides configuration for the bitbucket client

@@ -28,9 +28,9 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/meta"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/test"
-	"github.com/crossplane/provider-bitbucket-server/apis/accesskey/v1alpha1"
-	"github.com/crossplane/provider-bitbucket-server/internal/clients/bitbucket"
-	"github.com/crossplane/provider-bitbucket-server/internal/clients/bitbucket/fake"
+	"github.com/crossplane-contrib/provider-bitbucket-server/apis/accesskey/v1alpha1"
+	"github.com/crossplane-contrib/provider-bitbucket-server/internal/clients/bitbucket"
+	"github.com/crossplane-contrib/provider-bitbucket-server/internal/clients/bitbucket/fake"
 )
 
 type resourceModifier func(*v1alpha1.AccessKey)
