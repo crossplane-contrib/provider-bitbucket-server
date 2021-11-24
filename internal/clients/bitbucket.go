@@ -17,6 +17,7 @@ limitations under the License.
 package clients
 
 import (
+	"crypto/tls"
 	"net/http"
 
 	"github.com/crossplane-contrib/provider-bitbucket-server/internal/clients/bitbucket"
@@ -25,16 +26,22 @@ import (
 
 // Config provides configuration for the bitbucket client
 type Config struct {
-	Token   string
-	BaseURL string
+	Token     string
+	BaseURL   string
+	TLSConfig *tls.Config
 }
 
 // NewClient creates new Bitbucket Client with provided base URL and credentials
 func NewClient(c Config) *rest.Client {
+	httpClient := http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: c.TLSConfig,
+		},
+	}
 	return &rest.Client{
 		Token:      c.Token,
 		BaseURL:    c.BaseURL,
-		HTTPClient: http.DefaultClient,
+		HTTPClient: &httpClient,
 	}
 }
 
