@@ -91,6 +91,13 @@ spec:
                 required:
                 - source
                 type: object
+              tlsConfig:
+                description: TLS Configuration parameters
+                properties:
+                  insecureSkipVerify:
+                    description: Disable certificate validation against endpoints
+                    type: boolean
+                type: object
             required:
             - credentials
             type: object

@@ -17,6 +17,8 @@ limitations under the License.
 package config
 
 import (
+	"crypto/tls"
+
 	"k8s.io/client-go/util/workqueue"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -53,4 +55,20 @@ func Setup(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
 		Complete(providerconfig.NewReconciler(mgr, of,
 			providerconfig.WithLogger(l.WithValues("controller", name)),
 			providerconfig.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name)))))
+}
+
+// NewTLSConfig creates TLS config to override security configuration for bitbucket clients
+func NewTLSConfig(pc v1alpha1.ProviderConfig) *tls.Config {
+	var tlsConfig *tls.Config
+	if pc.Spec.TLSConfig != nil {
+		insecureSkipVerify := false
+		if pc.Spec.TLSConfig.InsecureSkipVerify != nil {
+			insecureSkipVerify = *pc.Spec.TLSConfig.InsecureSkipVerify
+		}
+		tlsConfig = &tls.Config{
+			InsecureSkipVerify: insecureSkipVerify, // nolint:gosec
+			// TODO: Implement CA certificates.
+		}
+	}
+	return tlsConfig
 }

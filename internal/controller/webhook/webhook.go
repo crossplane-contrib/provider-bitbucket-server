@@ -45,6 +45,7 @@ import (
 	"github.com/crossplane-contrib/provider-bitbucket-server/apis/webhook/v1alpha1"
 	"github.com/crossplane-contrib/provider-bitbucket-server/internal/clients"
 	"github.com/crossplane-contrib/provider-bitbucket-server/internal/clients/bitbucket"
+	"github.com/crossplane-contrib/provider-bitbucket-server/internal/controller/config"
 )
 
 const (
@@ -120,8 +121,9 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 	}
 
 	svc := c.newServiceFn(clients.Config{
-		BaseURL: pc.Spec.BaseURL,
-		Token:   string(data),
+		BaseURL:   pc.Spec.BaseURL,
+		Token:     string(data),
+		TLSConfig: config.NewTLSConfig(*pc),
 	})
 
 	return &external{service: svc, log: c.log, pwgen: pwgen}, nil

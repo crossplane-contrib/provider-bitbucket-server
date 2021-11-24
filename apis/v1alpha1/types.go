@@ -29,6 +29,15 @@ type ProviderConfigSpec struct {
 
 	// Credentials required to authenticate to this provider.
 	Credentials ProviderCredentials `json:"credentials"`
+
+	// TLS Configuration parameters
+	TLSConfig *TLSConfig `json:"tlsConfig,omitempty"`
+}
+
+// TLSConfig enables configuration of tls options
+type TLSConfig struct {
+	// Disable certificate validation against endpoints
+	InsecureSkipVerify *bool `json:"insecureSkipVerify,omitempty"`
 }
 
 // ProviderCredentials required to authenticate.
