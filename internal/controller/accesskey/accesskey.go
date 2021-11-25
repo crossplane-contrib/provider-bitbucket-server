@@ -161,6 +161,8 @@ func (c *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 		return managed.ExternalObservation{}, errors.Wrap(err, errGetFailed)
 	}
 
+	cr.Status.SetConditions(xpv1.Available())
+
 	cr.Status.AtProvider.ID = key.ID
 	cr.Status.AtProvider.Key = &v1alpha1.PublicKey{
 		Key:        key.Key,
