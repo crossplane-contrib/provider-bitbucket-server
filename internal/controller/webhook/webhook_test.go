@@ -208,7 +208,7 @@ func TestObserve(t *testing.T) {
 			if diff := cmp.Diff(tc.want.err, err, test.EquateErrors()); diff != "" {
 				t.Errorf("Observe(...): -want, +got\n%s", diff)
 			}
-			if diff := cmp.Diff(tc.want.o, o); diff != "" {
+			if diff := cmp.Diff(tc.want.o, o, cmpopts.IgnoreFields(o, "Diff")); diff != "" {
 				t.Errorf("Observe(...): -want, +got\n%s", diff)
 			}
 		})

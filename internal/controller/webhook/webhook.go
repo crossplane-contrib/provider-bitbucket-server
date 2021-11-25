@@ -171,11 +171,6 @@ func (c *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 
 	diff := cmp.Diff(cr.Webhook(), hook, ignoreEventOrder, ignoreID)
 
-	upToDate := diff == ""
-	if !upToDate {
-		c.log.Debug("Not up to date", "diff", diff)
-	}
-
 	return managed.ExternalObservation{
 		// Return false when the external resource does not exist. This lets
 		// the managed resource reconciler know that it needs to call Create to
@@ -185,9 +180,11 @@ func (c *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 		// Return false when the external resource exists, but it not up to date
 		// with the desired managed resource state. This lets the managed
 		// resource reconciler know that it needs to call Update.
-		ResourceUpToDate: upToDate,
+		ResourceUpToDate: diff == "",
 
 		ResourceLateInitialized: resourceLateInitialized,
+
+		Diff: diff,
 
 		// Return any details that may be required to connect to the external
 		// resource. These will be stored as the connection secret.
