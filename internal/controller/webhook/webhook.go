@@ -162,6 +162,8 @@ func (c *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 		return managed.ExternalObservation{}, errors.Wrap(err, errGetFailed)
 	}
 
+	cr.Status.SetConditions(xpv1.Available())
+
 	crBeforeLateInit := cr.DeepCopy()
 	if cr.Spec.ForProvider.Webhook.Configuration == nil {
 		cr.Spec.ForProvider.Webhook.Configuration = &v1alpha1.BitbucketWebhookConfiguration{}
