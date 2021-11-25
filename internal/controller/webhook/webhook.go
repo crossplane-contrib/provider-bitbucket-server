@@ -171,6 +171,8 @@ func (c *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 	cr.Spec.ForProvider.Webhook.Configuration.Secret = lateInitializeString(cr.Spec.ForProvider.Webhook.Configuration.Secret, hook.Configuration.Secret)
 	resourceLateInitialized := !cmp.Equal(cr.Spec.ForProvider, crBeforeLateInit.Spec.ForProvider)
 
+	cr.Status.AtProvider.ID = hook.ID
+
 	ignoreEventOrder := cmpopts.SortSlices(func(a, b string) bool { return a < b })
 	ignoreID := cmpopts.IgnoreFields(bitbucket.Webhook{}, "ID")
 
