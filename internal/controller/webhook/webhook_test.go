@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/pkg/errors"
 
 	"github.com/crossplane-contrib/provider-bitbucket-server/apis/webhook/v1alpha1"
@@ -118,7 +119,7 @@ func TestObserve(t *testing.T) {
 				cr: instance(withExternalName(99)),
 				r: &fake.MockWebhookClient{
 					MockGetWebhook: func(_ context.Context, repo bitbucket.Repo, id int) (result bitbucket.Webhook, err error) {
-						return instance().Webhook(), nil
+						return instance(withExternalName(99)).Webhook(), nil
 					},
 				},
 			},

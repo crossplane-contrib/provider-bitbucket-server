@@ -162,6 +162,9 @@ func (c *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 		return managed.ExternalObservation{}, errors.Wrap(err, errGetFailed)
 	}
 
+	crBeforeLateInit := cr.DeepCopy()
+	cr.Spec.ForProvider.Webhook.Configuration.Secret = lateInitializeString(cr.Spec.ForProvider.Webhook.Configuration.Secret, hook.Configuration.Secret)
+	resourceLateInitialized := !cmp.Equal(cr, crBeforeLateInit)
 
 	ignoreEventOrder := cmpopts.SortSlices(func(a, b string) bool { return a < b })
 	ignoreID := cmpopts.IgnoreFields(bitbucket.Webhook{}, "ID")
@@ -183,6 +186,8 @@ func (c *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 		// with the desired managed resource state. This lets the managed
 		// resource reconciler know that it needs to call Update.
 		ResourceUpToDate: upToDate,
+
+		ResourceLateInitialized: resourceLateInitialized,
 
 		// Return any details that may be required to connect to the external
 		// resource. These will be stored as the connection secret.
@@ -267,4 +272,11 @@ func (c *external) Delete(ctx context.Context, mg resource.Managed) error {
 	}
 
 	return nil
+}
+
+func lateInitializeString(s string, from string) string {
+	if from == "" {
+		return s
+	}
+	return from
 }
