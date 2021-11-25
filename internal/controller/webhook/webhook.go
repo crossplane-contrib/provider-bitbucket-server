@@ -21,7 +21,6 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"fmt"
-	"sort"
 	"strconv"
 
 	"github.com/google/go-cmp/cmp"
@@ -163,13 +162,8 @@ func (c *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 		return managed.ExternalObservation{}, errors.Wrap(err, errGetFailed)
 	}
 
-	ignoreEventOrder := cmp.Transformer("Sort", func(webhook bitbucket.Webhook) bitbucket.Webhook {
-		webhook.Events = append([]string(nil), webhook.Events...) // Copy input to avoid mutating it
 
-		sort.Strings(webhook.Events)
-		return webhook
-	})
-
+	ignoreEventOrder := cmpopts.SortSlices(func(a, b string) bool { return a < b })
 	ignoreID := cmpopts.IgnoreFields(bitbucket.Webhook{}, "ID")
 
 	diff := cmp.Diff(cr.Webhook(), hook, ignoreEventOrder, ignoreID)
