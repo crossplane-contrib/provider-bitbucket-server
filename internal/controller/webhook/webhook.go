@@ -21,7 +21,6 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"fmt"
-	"sort"
 	"strconv"
 
 	"github.com/google/go-cmp/cmp"
@@ -163,21 +162,21 @@ func (c *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 		return managed.ExternalObservation{}, errors.Wrap(err, errGetFailed)
 	}
 
-	ignoreEventOrder := cmp.Transformer("Sort", func(webhook bitbucket.Webhook) bitbucket.Webhook {
-		webhook.Events = append([]string(nil), webhook.Events...) // Copy input to avoid mutating it
+	cr.Status.SetConditions(xpv1.Available())
 
-		sort.Strings(webhook.Events)
-		return webhook
-	})
+	crBeforeLateInit := cr.DeepCopy()
+	if cr.Spec.ForProvider.Webhook.Configuration == nil {
+		cr.Spec.ForProvider.Webhook.Configuration = &v1alpha1.BitbucketWebhookConfiguration{}
+	}
+	cr.Spec.ForProvider.Webhook.Configuration.Secret = lateInitializeString(cr.Spec.ForProvider.Webhook.Configuration.Secret, hook.Configuration.Secret)
+	resourceLateInitialized := !cmp.Equal(cr.Spec.ForProvider, crBeforeLateInit.Spec.ForProvider)
 
+	cr.Status.AtProvider.ID = hook.ID
+
+	ignoreEventOrder := cmpopts.SortSlices(func(a, b string) bool { return a < b })
 	ignoreID := cmpopts.IgnoreFields(bitbucket.Webhook{}, "ID")
 
 	diff := cmp.Diff(cr.Webhook(), hook, ignoreEventOrder, ignoreID)
-
-	upToDate := diff == ""
-	if !upToDate {
-		c.log.Debug("Not up to date", "diff", diff)
-	}
 
 	return managed.ExternalObservation{
 		// Return false when the external resource does not exist. This lets
@@ -188,7 +187,11 @@ func (c *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 		// Return false when the external resource exists, but it not up to date
 		// with the desired managed resource state. This lets the managed
 		// resource reconciler know that it needs to call Update.
-		ResourceUpToDate: upToDate,
+		ResourceUpToDate: diff == "",
+
+		ResourceLateInitialized: resourceLateInitialized,
+
+		Diff: diff,
 
 		// Return any details that may be required to connect to the external
 		// resource. These will be stored as the connection secret.
@@ -273,4 +276,11 @@ func (c *external) Delete(ctx context.Context, mg resource.Managed) error {
 	}
 
 	return nil
+}
+
+func lateInitializeString(s string, from string) string {
+	if from == "" {
+		return s
+	}
+	return from
 }

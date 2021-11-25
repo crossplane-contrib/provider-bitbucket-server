@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/pkg/errors"
 
 	"github.com/crossplane-contrib/provider-bitbucket-server/apis/webhook/v1alpha1"
@@ -72,7 +73,7 @@ func instance(rm ...resourceModifier) *v1alpha1.Webhook {
 				RepoName:   "repo",
 				Webhook: v1alpha1.BitbucketWebhook{
 					Name: "name",
-					Configuration: v1alpha1.BitbucketWebhookConfiguration{
+					Configuration: &v1alpha1.BitbucketWebhookConfiguration{
 						Secret: "123",
 					},
 					Events: []v1alpha1.Event{
@@ -118,12 +119,12 @@ func TestObserve(t *testing.T) {
 				cr: instance(withExternalName(99)),
 				r: &fake.MockWebhookClient{
 					MockGetWebhook: func(_ context.Context, repo bitbucket.Repo, id int) (result bitbucket.Webhook, err error) {
-						return instance().Webhook(), nil
+						return instance(withExternalName(99)).Webhook(), nil
 					},
 				},
 			},
 			want: want{
-				cr: instance(withExternalName(99)),
+				cr: instance(withExternalName(99), withConditions(xpv1.Available())),
 				o: managed.ExternalObservation{
 					ResourceExists:    true,
 					ResourceUpToDate:  true,
@@ -143,7 +144,7 @@ func TestObserve(t *testing.T) {
 				},
 			},
 			want: want{
-				cr: instance(withExternalName(99)),
+				cr: instance(withExternalName(99), withConditions(xpv1.Available())),
 				o: managed.ExternalObservation{
 					ResourceExists:    true,
 					ResourceUpToDate:  false,
@@ -207,7 +208,7 @@ func TestObserve(t *testing.T) {
 			if diff := cmp.Diff(tc.want.err, err, test.EquateErrors()); diff != "" {
 				t.Errorf("Observe(...): -want, +got\n%s", diff)
 			}
-			if diff := cmp.Diff(tc.want.o, o); diff != "" {
+			if diff := cmp.Diff(tc.want.o, o, cmpopts.IgnoreFields(o, "Diff")); diff != "" {
 				t.Errorf("Observe(...): -want, +got\n%s", diff)
 			}
 		})

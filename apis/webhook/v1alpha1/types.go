@@ -50,7 +50,8 @@ type WebhookParameters struct {
 type BitbucketWebhook struct {
 	Name string `json:"name"`
 
-	Configuration BitbucketWebhookConfiguration `json:"configuration"`
+	// +optional
+	Configuration *BitbucketWebhookConfiguration `json:"configuration,omitempty"`
 
 	Events []Event `json:"events"`
 
@@ -76,7 +77,6 @@ type BitbucketWebhookConfiguration struct {
 
 // WebhookObservation are the observable fields of an Webhook.
 type WebhookObservation struct {
-	// Consider stats here?
 	ID int `json:"id,omitempty"`
 }
 
@@ -96,9 +96,10 @@ type WebhookStatus struct {
 
 // An Webhook is an SSH key with read or write access to a bitbucket git repo.
 // +kubebuilder:subresource:status
-// +kubebuilder:printcolumn:name="STATUS",type="string",JSONPath=".status.bindingPhase"
-// +kubebuilder:printcolumn:name="ID",type="string",JSONPath=".status.atProvider.id"
-// +kubebuilder:printcolumn:name="CLASS",type="string",JSONPath=".spec.classRef.name"
+// +kubebuilder:printcolumn:name="PROJECT",type="string",JSONPath=".spec.forProvider.projectKey"
+// +kubebuilder:printcolumn:name="REPO-NAME",type="string",JSONPath=".spec.forProvider.repoName"
+// +kubebuilder:printcolumn:name="SYNCED",type="string",JSONPath=".status.conditions[?(@.type=='Synced')].status"
+// +kubebuilder:printcolumn:name="READY",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].status"
 // +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:resource:scope=Cluster
 type Webhook struct {
@@ -125,11 +126,17 @@ func (a Webhook) Webhook() bitbucket.Webhook {
 	for _, ev := range a.Spec.ForProvider.Webhook.Events {
 		events = append(events, string(ev))
 	}
+
+	configuration := a.Spec.ForProvider.Webhook.Configuration
+	if configuration == nil {
+		configuration = &BitbucketWebhookConfiguration{}
+	}
+
 	return bitbucket.Webhook{
 		// ID: get from CR? meta.GetExternalName?
 
 		Name:          a.Spec.ForProvider.Webhook.Name,
-		Configuration: a.Spec.ForProvider.Webhook.Configuration,
+		Configuration: *configuration,
 		Events:        events,
 		URL:           a.Spec.ForProvider.Webhook.URL,
 	}
