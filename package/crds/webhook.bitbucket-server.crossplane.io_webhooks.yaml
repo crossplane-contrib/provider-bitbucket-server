@@ -157,7 +157,6 @@ spec:
                 description: WebhookObservation are the observable fields of an Webhook.
                 properties:
                   id:
-                    description: Consider stats here?
                     type: integer
                 type: object
               conditions:

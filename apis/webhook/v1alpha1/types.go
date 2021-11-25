@@ -77,7 +77,6 @@ type BitbucketWebhookConfiguration struct {
 
 // WebhookObservation are the observable fields of an Webhook.
 type WebhookObservation struct {
-	// Consider stats here?
 	ID int `json:"id,omitempty"`
 }
 
