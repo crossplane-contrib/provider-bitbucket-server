@@ -73,7 +73,7 @@ func instance(rm ...resourceModifier) *v1alpha1.Webhook {
 				RepoName:   "repo",
 				Webhook: v1alpha1.BitbucketWebhook{
 					Name: "name",
-					Configuration: v1alpha1.BitbucketWebhookConfiguration{
+					Configuration: &v1alpha1.BitbucketWebhookConfiguration{
 						Secret: "123",
 					},
 					Events: []v1alpha1.Event{

@@ -163,8 +163,11 @@ func (c *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 	}
 
 	crBeforeLateInit := cr.DeepCopy()
+	if cr.Spec.ForProvider.Webhook.Configuration == nil {
+		cr.Spec.ForProvider.Webhook.Configuration = &v1alpha1.BitbucketWebhookConfiguration{}
+	}
 	cr.Spec.ForProvider.Webhook.Configuration.Secret = lateInitializeString(cr.Spec.ForProvider.Webhook.Configuration.Secret, hook.Configuration.Secret)
-	resourceLateInitialized := !cmp.Equal(cr, crBeforeLateInit)
+	resourceLateInitialized := !cmp.Equal(cr.Spec.ForProvider, crBeforeLateInit.Spec.ForProvider)
 
 	ignoreEventOrder := cmpopts.SortSlices(func(a, b string) bool { return a < b })
 	ignoreID := cmpopts.IgnoreFields(bitbucket.Webhook{}, "ID")

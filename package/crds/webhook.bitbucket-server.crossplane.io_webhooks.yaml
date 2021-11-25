@@ -97,7 +97,6 @@ spec:
                       url:
                         type: string
                     required:
-                    - configuration
                     - events
                     - name
                     - url

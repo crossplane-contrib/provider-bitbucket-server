@@ -50,7 +50,8 @@ type WebhookParameters struct {
 type BitbucketWebhook struct {
 	Name string `json:"name"`
 
-	Configuration BitbucketWebhookConfiguration `json:"configuration"`
+	// +optional
+	Configuration *BitbucketWebhookConfiguration `json:"configuration,omitempty"`
 
 	Events []Event `json:"events"`
 
@@ -125,11 +126,17 @@ func (a Webhook) Webhook() bitbucket.Webhook {
 	for _, ev := range a.Spec.ForProvider.Webhook.Events {
 		events = append(events, string(ev))
 	}
+
+	configuration := a.Spec.ForProvider.Webhook.Configuration
+	if configuration == nil {
+		configuration = &BitbucketWebhookConfiguration{}
+	}
+
 	return bitbucket.Webhook{
 		// ID: get from CR? meta.GetExternalName?
 
 		Name:          a.Spec.ForProvider.Webhook.Name,
-		Configuration: a.Spec.ForProvider.Webhook.Configuration,
+		Configuration: *configuration,
 		Events:        events,
 		URL:           a.Spec.ForProvider.Webhook.URL,
 	}
