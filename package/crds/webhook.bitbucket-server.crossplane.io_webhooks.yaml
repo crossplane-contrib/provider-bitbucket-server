@@ -17,14 +17,17 @@ spec:
   scope: Cluster
   versions:
   - additionalPrinterColumns:
-    - jsonPath: .status.bindingPhase
-      name: STATUS
+    - jsonPath: .spec.forProvider.projectKey
+      name: PROJECT
       type: string
-    - jsonPath: .status.atProvider.id
-      name: ID
+    - jsonPath: .spec.forProvider.repoName
+      name: REPO-NAME
       type: string
-    - jsonPath: .spec.classRef.name
-      name: CLASS
+    - jsonPath: .status.conditions[?(@.type=='Synced')].status
+      name: SYNCED
+      type: string
+    - jsonPath: .status.conditions[?(@.type=='Ready')].status
+      name: READY
       type: string
     - jsonPath: .metadata.creationTimestamp
       name: AGE
