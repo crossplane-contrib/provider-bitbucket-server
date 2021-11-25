@@ -134,7 +134,7 @@ func TestObserve(t *testing.T) {
 						Key:        key1,
 						Permission: bitbucket.PermissionRepoRead,
 					},
-				})),
+				}), withConditions(xpv1.Available())),
 				o: managed.ExternalObservation{
 					ResourceExists:    true,
 					ResourceUpToDate:  true,
@@ -167,7 +167,7 @@ func TestObserve(t *testing.T) {
 						Key:        key1,
 						Permission: bitbucket.PermissionRepoWrite,
 					},
-				})),
+				}), withConditions(xpv1.Available())),
 				o: managed.ExternalObservation{
 					ResourceExists:    true,
 					ResourceUpToDate:  false,
