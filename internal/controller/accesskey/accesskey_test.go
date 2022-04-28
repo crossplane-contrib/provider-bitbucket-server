@@ -18,11 +18,10 @@ package accesskey
 
 import (
 	"context"
+	"encoding/pem"
 	"fmt"
+	"strings"
 	"testing"
-
-	"github.com/google/go-cmp/cmp"
-	"github.com/pkg/errors"
 
 	"github.com/crossplane-contrib/provider-bitbucket-server/apis/accesskey/v1alpha1"
 	"github.com/crossplane-contrib/provider-bitbucket-server/internal/clients/bitbucket"
@@ -31,6 +30,9 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/meta"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/test"
+	"github.com/google/go-cmp/cmp"
+	"github.com/pkg/errors"
+	"golang.org/x/crypto/ssh"
 )
 
 type resourceModifier func(*v1alpha1.AccessKey)
@@ -516,5 +518,36 @@ func TestDelete(t *testing.T) {
 				t.Errorf("Delete(...): -want, +got\n%s", diff)
 			}
 		})
+	}
+}
+
+func Test_keygen(t *testing.T) {
+	publicKey, privateKey, err := keygen()
+	if err != nil {
+		t.Errorf("keygen() error = %v, wantErr %v", err, false)
+		return
+	}
+
+	privateKeyHeader := "-----BEGIN PRIVATE KEY-----"
+	if !strings.Contains(string(privateKey), privateKeyHeader) {
+		t.Errorf("keygen() privateKey pem did not match expected header: %s, got: %v", privateKeyHeader, string(privateKey))
+	}
+
+	p, rest := pem.Decode(privateKey)
+	if len(rest) > 0 {
+		t.Errorf("keygen() generated pem which could not be parsed completly. got rest: %s", string(rest))
+	}
+
+	if p.Type == "PRIVATE KEY" {
+		_, err := ssh.ParsePrivateKey(privateKey)
+		if err != nil {
+			t.Errorf("keygen() generated private key which could not be parse by go ssh: %v", err)
+		}
+	} else {
+		t.Errorf("keygen() private key pem type not 'PRIVATE KEY': %s", p.Type)
+	}
+
+	if !strings.HasPrefix(publicKey, ssh.KeyAlgoED25519) {
+		t.Errorf("keygen() outputted publickey which was not prefied with expected method: %s", publicKey)
 	}
 }

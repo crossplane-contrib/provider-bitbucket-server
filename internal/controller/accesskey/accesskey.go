@@ -19,8 +19,8 @@ package accesskey
 import (
 	"bytes"
 	"context"
+	"crypto/ed25519"
 	"crypto/rand"
-	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
@@ -205,22 +205,32 @@ func (c *external) create(ctx context.Context, cr *v1alpha1.AccessKey) error {
 }
 
 func keygen() (string, []byte, error) {
-	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	publicKey, privateKey, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {
 		return "", nil, err
 	}
-	privateKeyPEM := &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(privateKey)}
+	privateBytes, err := x509.MarshalPKCS8PrivateKey(privateKey)
+	if err != nil {
+		return "", nil, err
+	}
+
+	// generate encoded private key pem
+	privateKeyPEM := &pem.Block{Type: "PRIVATE KEY", Bytes: privateBytes}
+	if err != nil {
+		return "", nil, err
+	}
 	var private bytes.Buffer
 	if err := pem.Encode(&private, privateKeyPEM); err != nil {
 		return "", nil, err
 	}
-	// generate public key
-	pub, err := ssh.NewPublicKey(&privateKey.PublicKey)
+
+	// generate ssh authorized public key
+	sshPublicKey, err := ssh.NewPublicKey(publicKey)
 	if err != nil {
 		return "", nil, err
 	}
-	public := ssh.MarshalAuthorizedKey(pub)
-	return string(public), private.Bytes(), nil
+	authorizedKey := ssh.MarshalAuthorizedKey(sshPublicKey)
+	return string(authorizedKey), private.Bytes(), nil
 }
 
 func (c *external) Create(ctx context.Context, mg resource.Managed) (managed.ExternalCreation, error) {
