@@ -21,11 +21,11 @@ import (
 	"context"
 	"crypto/ed25519"
 	"crypto/rand"
-	"crypto/x509"
 	"encoding/pem"
 	"fmt"
 	"strconv"
 
+	"github.com/mikesmitty/edkey"
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/ssh"
 	"k8s.io/apimachinery/pkg/types"
@@ -209,13 +209,10 @@ func keygen() (string, []byte, error) {
 	if err != nil {
 		return "", nil, err
 	}
-	privateBytes, err := x509.MarshalPKCS8PrivateKey(privateKey)
-	if err != nil {
-		return "", nil, err
-	}
+	privateBytes := edkey.MarshalED25519PrivateKey(privateKey)
 
 	// generate encoded private key pem
-	privateKeyPEM := &pem.Block{Type: "PRIVATE KEY", Bytes: privateBytes}
+	privateKeyPEM := &pem.Block{Type: "OPENSSH PRIVATE KEY", Bytes: privateBytes}
 	if err != nil {
 		return "", nil, err
 	}

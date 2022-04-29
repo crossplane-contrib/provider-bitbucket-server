@@ -20,6 +20,10 @@ import (
 	"context"
 	"encoding/pem"
 	"fmt"
+	"io/fs"
+	"log"
+	"os"
+	"os/exec"
 	"strings"
 	"testing"
 
@@ -528,7 +532,7 @@ func Test_keygen(t *testing.T) {
 		return
 	}
 
-	privateKeyHeader := "-----BEGIN PRIVATE KEY-----"
+	privateKeyHeader := "-----BEGIN OPENSSH PRIVATE KEY-----"
 	if !strings.Contains(string(privateKey), privateKeyHeader) {
 		t.Errorf("keygen() privateKey pem did not match expected header: %s, got: %v", privateKeyHeader, string(privateKey))
 	}
@@ -538,7 +542,7 @@ func Test_keygen(t *testing.T) {
 		t.Errorf("keygen() generated pem which could not be parsed completly. got rest: %s", string(rest))
 	}
 
-	if p.Type == "PRIVATE KEY" {
+	if p.Type == "OPENSSH PRIVATE KEY" {
 		_, err := ssh.ParsePrivateKey(privateKey)
 		if err != nil {
 			t.Errorf("keygen() generated private key which could not be parse by go ssh: %v", err)
@@ -550,4 +554,17 @@ func Test_keygen(t *testing.T) {
 	if !strings.HasPrefix(publicKey, ssh.KeyAlgoED25519) {
 		t.Errorf("keygen() outputted publickey which was not prefied with expected method: %s", publicKey)
 	}
+	_ = os.WriteFile("test_private", privateKey, fs.FileMode(0600))
+	cmd := exec.Command("ssh-keygen", "-y", "-f", "test_private")
+	stdoutStderr, err := cmd.CombinedOutput()
+	if err != nil {
+		log.Fatal(err)
+	}
+	sshkeygenTrim := strings.TrimSpace(string(stdoutStderr))
+	keygenTrim := strings.TrimSpace(publicKey)
+	if sshkeygenTrim != keygenTrim {
+		t.Errorf("keygen() did not produce the same publickey as ssh-keygen. got from keygen: %s, expected as with ssh-keygen: %s", keygenTrim, sshkeygenTrim)
+	}
+	os.Remove("test_private")
+
 }
